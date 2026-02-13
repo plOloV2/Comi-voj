@@ -12,6 +12,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native -flto -fom
 find_package(OpenMP REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    src/data_prepare.c
     src/main.c
 )
 
