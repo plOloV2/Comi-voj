@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.28)
 project(comi_voj C)
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    xoshiro256
+    GIT_REPOSITORY https://github.com/plOloV2/Xoshiro256.git
+    GIT_TAG        main
+)
+
+FetchContent_MakeAvailable(xoshiro256)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pipe")
 
@@ -12,6 +22,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native -flto -fom
 find_package(OpenMP REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    src/distance_calc.c
     src/data_prepare.c
     src/main.c
 )
@@ -22,4 +33,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} PRIVATE inc)
 
-target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_C m)
+target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_C m xoshiro256)

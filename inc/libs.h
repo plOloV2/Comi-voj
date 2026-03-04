@@ -5,5 +5,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <omp.h>
+#include "xoshiro256/Xoshiro256.h"
 
 #endif

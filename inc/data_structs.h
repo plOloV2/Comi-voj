@@ -9,7 +9,10 @@ typedef struct{
 }Point;
 
 typedef struct{
-    int64_t distance;
+    union{
+        int64_t distance_i;
+        double  distance_d;
+    };
     uint8_t* points_list;
     uint8_t* visited;
 }Route;
