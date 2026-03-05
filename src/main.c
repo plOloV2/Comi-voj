@@ -6,10 +6,14 @@
 int main(){
 
 
-    char file_loc[64];
+    char file_loc[256];
     size_t num_points = 0;
 
-    startup_sentence(file_loc, &num_points);
+    int conf = startup_sentence(file_loc, &num_points);
+
+    int choosen_alg =  conf & 0xff;
+    int data_source = (conf >> 8) & 0xff;
+    int num_runs    =  conf >> 16;
 
     // Point* points = parse_file(file_loc, &num_points);
 
