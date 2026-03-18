@@ -29,6 +29,16 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "intel-release",
+      "displayName": "Intel Release",
+      "description": "Release build using Intel C Compiler (icx)",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "icx"
+      }
     }
   ],
   "buildPresets": [
@@ -39,6 +49,10 @@
     {
       "name": "release",
       "configurePreset": "release"
+    },
+    {
+      "name": "intel-release",
+      "configurePreset": "intel-release"
     }
   ]
 }
