@@ -4,6 +4,6 @@
 #include "libs.h"
 #include "data_operations/data_structs.h"
 
-Route* find_naive_route(Distance** distances, size_t num_points);
+Route* find_naive_route(uint32_t* distances, size_t num_points);
 
 #endif

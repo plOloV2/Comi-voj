@@ -1,7 +1,13 @@
 #include "libs.h"
 #include "data_operations/data_structs.h"
 
-Point* parse_file(char* file_path, size_t* num_points){
+static inline uint32_t* aloc_mem(size_t size){
+
+    return malloc(size * size * sizeof(uint32_t));
+    
+}
+
+uint32_t* parse_file(char* file_path, size_t* num_points){
 
     FILE* f = fopen(file_path, "r");
     if(!f)
@@ -12,65 +18,67 @@ Point* parse_file(char* file_path, size_t* num_points){
         return NULL;
     }
 
-    if(*num_points <= 0){
+    if(*num_points == 0){
         *num_points = 0;
         fclose(f);
         return NULL;
     }
 
-    Point* points = malloc(*num_points * sizeof(Point));
-    if(!points){
+    uint32_t* distances = aloc_mem(*num_points);
+    if(!distances){
+
+        *num_points = 0;
         fclose(f);
         return NULL;
+
     }
 
     for(size_t i = 0; i < *num_points; i++){
-        if(fscanf(f, "%hd %hd", &points[i].x, &points[i].y) != 2){
-            free(points);
-            fclose(f);
-            *num_points = 0;
-            return NULL;
+        for(size_t j = 0; j < *num_points; j++){
+
+            if(fscanf(f, "%u", &distances[i * *num_points + j]) != 1){
+
+                free(distances);
+                fclose(f);
+                *num_points = 0;
+                return NULL;
+
+            }
+
+            if(i == j)
+                distances[i * *num_points + j] = 0;
+
         }
+        
     }
 
     fclose(f);
 
-    return points;
+    return distances;
 
 }
 
-Point* create_random_points(size_t num_points, xoshiro256_state* xos_state){
+uint32_t* create_random_points(size_t num_points, xoshiro256_state* xos_state){
 
-    Point* points = malloc(num_points * sizeof(Point));
-    if(!points)
+    uint32_t* distances = aloc_mem(num_points);
+    if(!distances)
         return NULL;
 
-    int num_runs = num_points / 2;
+    for(size_t i = 0; i < num_points; i++){
+        for(size_t j = 0; j < num_points; j+=2){
 
-    for(int i = 0; i < num_runs; i++){
+            uint64_t rand_val = xoshiro_next(xos_state);
 
-        uint64_t rand_val = xoshiro_next(xos_state);
+            distances[i * num_points + j] = (i == j) ? 0 : (rand_val & 0xffffffff);
 
-        points[(i * 2) + 0].x = (int16_t)(rand_val & 0xffff);
-        points[(i * 2) + 0].y = (int16_t)((rand_val >> 16) & 0xffff);
-        
-        points[(i * 2) + 1].x = (int16_t)((rand_val >> 32) & 0xffff);
-        points[(i * 2) + 1].y = (int16_t)((rand_val >> 48) & 0xffff);
+            if((j + 1) < num_points){
+                distances[i * num_points + j + 1] = (i == (j + 1)) ? 0 : ((rand_val >> 32) & 0xffffffff);
+            }
 
-    }
-
-    if(num_points % 2 == 1){
-        
-        uint64_t rand_val = xoshiro_next(xos_state);
-
-        points[num_points - 1].x = (int16_t)(rand_val & 0xffff);
-        points[num_points - 1].y = (int16_t)((rand_val >> 16) & 0xffff);
+        }
 
     }
 
-    return points;
+    return distances;
 
 }
-
-
-

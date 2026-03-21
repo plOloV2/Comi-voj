@@ -22,7 +22,6 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native -flto -fom
 find_package(OpenMP REQUIRED)
 
 add_executable(${PROJECT_NAME}
-    src/data_operations/distance_calc.c
     src/data_operations/data_prepare.c
     src/algorithms/naive_search.c
     src/UI/TUI_func.c

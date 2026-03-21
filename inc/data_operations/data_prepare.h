@@ -4,10 +4,8 @@
 #include "libs.h"
 #include "data_structs.h"
 
-Point* parse_file(char* file_path, size_t* num_points);
+uint32_t* parse_file(char* file_path, size_t* num_points);
 
-Point* create_random_points(size_t num_points, xoshiro256_state* xos_state);
-
-Distance** calc_dist_table(Point* points, size_t num_points, int bool_float_distance);
+uint32_t* create_random_distances(size_t num_points, xoshiro256_state* xos_state);
 
 #endif

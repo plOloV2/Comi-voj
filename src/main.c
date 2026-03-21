@@ -14,11 +14,11 @@ int main(){
     int data_source = (conf >> 8) & 0xff;
     int num_runs    =  conf >> 16;
 
-    Point* points = NULL;
+    uint32_t** distances = NULL;
 
     if(data_source == 1){
 
-        points = parse_file(file_loc, &num_points);
+        
 
     }else{
 
