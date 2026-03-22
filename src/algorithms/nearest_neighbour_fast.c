@@ -6,20 +6,20 @@ Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_
 
     Route* naive = malloc(sizeof(Route));
     if(!naive){
-        print_error("Route struct alloc failed in NN algorithm, exiting...\n");
+        print_error("Route struct alloc failed in fast NN algorithm, exiting...\n");
         return NULL;
     }
 
     naive->city_order = malloc(num_points * sizeof(uint8_t));
     if(!naive->city_order){
-        print_error("city_order table alloc failed in NN algorithm, exiting...\n");
+        print_error("city_order table alloc failed in fast NN algorithm, exiting...\n");
         free(naive);
         return NULL;
     }
     
     uint8_t* visited = calloc(num_points, sizeof(uint8_t));
     if(!visited){
-        print_error("visited table alloc failed in NN algorithm, exiting...\n");
+        print_error("visited table alloc failed in fast NN algorithm, exiting...\n");
         free(naive->city_order);
         free(naive);
         return NULL;
@@ -51,7 +51,7 @@ Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_
         }
 
         if(target_id == -1){
-            print_error("NN algorithm finished too early. Maybe it's a distonnected graph or corrupted data?\n");
+            print_error("Fast NN algorithm finished too early. Maybe it's a distonnected graph or corrupted data?\n");
             free(visited);
             free(naive);
             return NULL;
