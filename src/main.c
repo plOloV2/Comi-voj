@@ -3,27 +3,59 @@
 #include "UI/TUI_func.h"
 #include "data_operations/data_prepare.h"
 
+int display_main_menu();
+
 int main(){
 
-    char file_loc[256];
-    size_t num_points = 0;
+    int run = 1;
 
-    int conf = startup_sentence(file_loc, &num_points);
+    while(run){
 
-    int choosen_alg =  conf & 0xff;
-    int data_source = (conf >> 8) & 0xff;
-    int num_runs    =  conf >> 16;
+        int conf = display_main_menu();
 
-    uint32_t** distances = NULL;
+        switch(conf){
+            case 1:
+                break;
+            
+            case 2:
+                break;
+            
+            case 3:
+                break;
+            
+            case 4:
+                break;
+            
+            default :
+                run = 0;
+                break;
+            
+        }
 
-    if(data_source == 1){
+    }
+
+    return 0;
+
+    // char file_loc[256];
+    // size_t num_points = 0;
+
+    // int conf = startup_sentence(file_loc, &num_points);
+
+
+    // int choosen_alg =  conf & 0xff;
+    // int data_source = (conf >> 8) & 0xff;
+    // int num_runs    =  conf >> 16;
+
+    // uint32_t** distances = NULL;
+
+    // if(data_source == 1){
 
         
 
-    }else{
+    // }else{
 
 
-    }
+    // }
 
 
     // if(num_points <= 2){
@@ -50,6 +82,6 @@ int main(){
 
     // fprintf(stdout, "res: %lu\n", naive->distance_u);
 
-    return 0;
+    // return 0;
 
 }

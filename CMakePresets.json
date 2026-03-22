@@ -54,8 +54,8 @@
     },
     {
       "name": "debug_icx",
-      "displayName": "Debug icx",
-      "description": "Debug icx build with symbols",
+      "displayName": "Debug ICX",
+      "description": "Debug ICX build with symbols",
       "inherits": "base-ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
