@@ -13,27 +13,59 @@
       "binaryDir": "${sourceDir}/build/${presetName}"
     },
     {
-      "name": "debug",
-      "displayName": "Debug",
-      "description": "Debug build with symbols",
+      "name": "debug_gcc",
+      "displayName": "Debug GCC",
+      "description": "Debug GCC build with symbols",
       "inherits": "base-ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc"
       }
     },
     {
-      "name": "release",
-      "displayName": "Release",
-      "description": "Release build with optimizations",
+      "name": "release_gcc",
+      "displayName": "Release GCC",
+      "description": "Release GCC build with optimizations",
       "inherits": "base-ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc"
       }
     },
     {
-      "name": "intel-release",
-      "displayName": "Intel Release",
-      "description": "Release build using Intel C Compiler (icx)",
+      "name": "debug_clang",
+      "displayName": "Debug CLANG",
+      "description": "Debug CLANG build with symbols",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang"
+      }
+    },
+    {
+      "name": "release_clang",
+      "displayName": "Release CLANG",
+      "description": "Release CLANG build with optimizations",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang"
+      }
+    },
+    {
+      "name": "debug_icx",
+      "displayName": "Debug icx",
+      "description": "Debug icx build with symbols",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "icx"
+      }
+    },
+    {
+      "name": "release_icx",
+      "displayName": "Release ICX",
+      "description": "Release ICX build with optimizations",
       "inherits": "base-ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -43,16 +75,28 @@
   ],
   "buildPresets": [
     {
-      "name": "debug",
-      "configurePreset": "debug"
+      "name": "debug_gcc",
+      "configurePreset": "debug_gcc"
     },
     {
-      "name": "release",
-      "configurePreset": "release"
+      "name": "release_gcc",
+      "configurePreset": "release_gcc"
     },
     {
-      "name": "intel-release",
-      "configurePreset": "intel-release"
+      "name": "debug_clang",
+      "configurePreset": "debug_clang"
+    },
+    {
+      "name": "release_clang",
+      "configurePreset": "release_clang"
+    },
+    {
+      "name": "debug_icx",
+      "configurePreset": "debug_icx"
+    },
+    {
+      "name": "release_icx",
+      "configurePreset": "release_icx"
     }
   ]
 }

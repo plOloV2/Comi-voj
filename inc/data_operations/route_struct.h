@@ -1,5 +1,5 @@
-#ifndef ROUTE_STRUCTS_H
-#define ROUTE_STRUCTS_H
+#ifndef ROUTE_STRUCT_H
+#define ROUTE_STRUCT_H
 
 #include "libs.h"
 
