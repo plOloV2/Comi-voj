@@ -23,8 +23,10 @@ find_package(OpenMP REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/data_operations/data_prepare.c
-    src/algorithms/nearest_neighbour.c
+    src/algorithms/nearest_neighbour_fast.c
+    src/algorithms/nearest_neighbour_stack.c
     src/algorithms/repetitive_nearest_neighbour.c
+    src/algorithms/brute_force.c
     src/UI/TUI_func.c
     src/main.c
 )

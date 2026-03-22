@@ -3,7 +3,7 @@
 
 void print_error(char* erro_msg){
 
-    fprintf(stderr, ANSI_COLOR_RED ANSI_STYLE_BOLD "%s", erro_msg);
+    fprintf(stderr, ANSI_COLOR_RED ANSI_STYLE_BOLD "ERROR: %s", erro_msg);
 
 }
 

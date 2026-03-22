@@ -1,10 +1,8 @@
 #include "libs.h"
 #include "UI/TUI_func.h"
-#include "data_operations/data_structs.h"
+#include "data_operations/route_struct.h"
 
-Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point_id);
-
-Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points){
+Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Route* (*NN_func)(uint32_t* distances, size_t num_points, int start_point_id)){
 
     if(num_points <= 2){
         print_error("Graph size is less or eqal to 2. You can find the best by yourself.\n");
@@ -21,7 +19,7 @@ Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points){
 
     for(size_t i = 0; i < num_points; i++){
 
-        uint64_t now_dist = nearest_neighbour(distances, num_points, i)->distance_u;
+        uint64_t now_dist = NN_func(distances, num_points, i)->distance_u;
 
         if(now_dist < repitive->distance_u)
             repitive->distance_u = now_dist;

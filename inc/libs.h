@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <omp.h>
+#include <string.h>
 #include "xoshiro256/Xoshiro256.h"
 
 #endif

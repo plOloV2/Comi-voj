@@ -25,6 +25,17 @@ int main(){
 
     }
 
+
+    // if(num_points <= 2){
+    //     print_error("Graph size is less or eqal to 2. You can find the best by yourself.\n");
+    //     return NULL;
+    // }
+
+    // if(start_point_id >= num_points){
+    //     print_error("Incorrect starting city ID. Starting city ID bigger than all cities number.\n");
+    //     return NULL;
+    // }
+
     // if(float_calc == 1){
 
         // Distance** distances_u = calc_dist_table(points, num_points, float_calc);

@@ -1,20 +1,26 @@
 #include "libs.h"
 #include "UI/TUI_func.h"
-#include "data_operations/data_structs.h"
+#include "data_operations/route_struct.h"
 
-Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point_id){
+Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_point_id){
 
-    if(num_points <= 2){
-        print_error("Graph size is less or eqal to 2. You can find the best by yourself.\n");
+    Route* naive = malloc(sizeof(Route));
+    if(!naive){
+        print_error("Route struct alloc failed in NN algorithm, exiting...\n");
         return NULL;
     }
 
-    Route* naive = malloc(sizeof(Route));
-    if(!naive)
+    naive->city_order = malloc(num_points * sizeof(uint8_t));
+    if(!naive->city_order){
+        print_error("city_order table alloc failed in NN algorithm, exiting...\n");
+        free(naive);
         return NULL;
+    }
     
     uint8_t* visited = calloc(num_points, sizeof(uint8_t));
     if(!visited){
+        print_error("visited table alloc failed in NN algorithm, exiting...\n");
+        free(naive->city_order);
         free(naive);
         return NULL;
     }
@@ -23,6 +29,7 @@ Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point
     int now_position = start_point_id;
     int target_id = -1;
     naive->distance_u = 0;
+    naive->city_order[0] = start_point_id;
 
     naive->time = omp_get_wtime();
 
@@ -37,26 +44,21 @@ Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point
                 continue;
 
             if(distances[now_position * num_points + j] < min){
-
                 min = distances[now_position * num_points + j];
                 target_id = j;
-
             }
 
         }
 
         if(target_id == -1){
-
             print_error("NN algorithm finished too early. Maybe it's a distonnected graph or corrupted data?\n");
             free(visited);
             free(naive);
             return NULL;
-
         }
 
         visited[target_id] = 1;
-        now_position = target_id;
-
+        naive->city_order[i] = now_position = target_id;
         naive->distance_u += min;
 
     }
@@ -68,5 +70,3 @@ Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point
     return naive;
 
 }
-
-

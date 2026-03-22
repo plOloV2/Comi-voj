@@ -2,10 +2,14 @@
 #define ALGORITHMS_H
 
 #include "libs.h"
-#include "data_operations/data_structs.h"
+#include "data_operations/route_struct.h"
 
-Route* nearest_neighbour(uint32_t* distances, size_t num_points, int start_point_id);
+Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_point_id);
 
-Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points);
+Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start_point_id);
+
+Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Route* (*NN_func)(uint32_t* distances, size_t num_points, int start_point_id));
+
+Route* brute_force(uint32_t* distances, size_t num_points);
 
 #endif
