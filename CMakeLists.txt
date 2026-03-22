@@ -23,7 +23,8 @@ find_package(OpenMP REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/data_operations/data_prepare.c
-    src/algorithms/naive_search.c
+    src/algorithms/nearest_neighbour.c
+    src/algorithms/repetitive_nearest_neighbour.c
     src/UI/TUI_func.c
     src/main.c
 )
