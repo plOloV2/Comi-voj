@@ -2,7 +2,7 @@
 #include "UI/TUI_func.h"
 #include "data_operations/route_struct.h"
 
-#define MAX_ROUTE 0xfffffff8
+#define MAX_ROUTE 0x0fff
 
 static inline uint32_t* aloc_mem(size_t size){
 
@@ -64,7 +64,7 @@ uint32_t* parse_file(char* file_path, size_t* num_points){
 
 }
 
-uint32_t* create_random_points(size_t num_points, xoshiro256_state* xos_state){
+uint32_t* create_random_distances(size_t num_points, xoshiro256_state* xos_state){
 
     uint32_t* distances = aloc_mem(num_points);
     if(!distances){
@@ -77,10 +77,10 @@ uint32_t* create_random_points(size_t num_points, xoshiro256_state* xos_state){
 
             uint64_t rand_val = xoshiro_next(xos_state);
 
-            distances[i * num_points + j] = (i == j) ? UINT32_MAX : ((rand_val & 0xffffffff) % MAX_ROUTE);
+            distances[i * num_points + j] = (i == j) ? UINT32_MAX : (((rand_val & 0xffffffff) % MAX_ROUTE) + 1);
 
             if((j + 1) < num_points)
-                distances[i * num_points + j + 1] = (i == (j + 1)) ? UINT32_MAX : (((rand_val >> 32) & 0xffffffff) % MAX_ROUTE);
+                distances[i * num_points + j + 1] = (i == (j + 1)) ? UINT32_MAX : ((((rand_val >> 32) & 0xffffffff) % MAX_ROUTE) + 1);
 
         }
 

@@ -3,85 +3,83 @@
 #include "UI/TUI_func.h"
 #include "data_operations/data_prepare.h"
 
-int display_main_menu();
+Route* run_choosen_algorithm(int algorithm, int perms, uint32_t* distances, size_t num_points);
 
 int main(){
 
-    int run = 1;
+    greeter();
 
-    while(run){
+    uint64_t seed;
+    create_rand_seed(&seed);
 
-        int conf = display_main_menu();
+    xoshiro256_state RNG;
+    xoshiro_init(&RNG, seed); 
 
-        switch(conf){
-            case 1:
-                break;
-            
-            case 2:
-                break;
-            
-            case 3:
-                break;
-            
-            case 4:
-                break;
-            
-            default :
-                run = 0;
-                break;
-            
+    if(start_choice() == 1){
+
+        print_error("test");
+
+    }else{
+
+        int run = 1;
+
+        uint32_t* dist = NULL;
+        size_t num_points = 0;
+        Route* result = NULL;
+
+        while(run){
+
+            int conf = display_test_menu();
+
+            switch(conf){
+                case 0:
+                    run = 0;
+                    break;
+
+                case 1:
+                    free(dist);
+                    char path[256];
+                    get_file_path(path);
+                    dist = parse_file(path, &num_points);
+                    break;
+                
+                case 2:
+                    free(dist);
+                    num_points = get_rand_point_num();
+                    dist = create_random_distances(num_points, &RNG);
+                    break;
+                
+                case 3:
+                    disp_dist(dist, num_points);
+                    break;
+                
+                case 4:
+                    int good_to_go = check_data_created(dist, num_points);
+                    if(!good_to_go)
+                        break;
+
+                    int algorithm = 0, perms = 0;
+                    get_algorithm(&algorithm, &perms);
+
+                    result = run_choosen_algorithm(algorithm, perms, dist, num_points);
+                    display_Route(result, num_points);
+
+                    if(result)
+                        free(result->city_order);
+                        
+                    free(result);
+                    result = NULL;
+
+                    break;
+                
+            }
+
         }
+        
+        free(result);
 
     }
 
     return 0;
-
-    // char file_loc[256];
-    // size_t num_points = 0;
-
-    // int conf = startup_sentence(file_loc, &num_points);
-
-
-    // int choosen_alg =  conf & 0xff;
-    // int data_source = (conf >> 8) & 0xff;
-    // int num_runs    =  conf >> 16;
-
-    // uint32_t** distances = NULL;
-
-    // if(data_source == 1){
-
-        
-
-    // }else{
-
-
-    // }
-
-
-    // if(num_points <= 2){
-    //     print_error("Graph size is less or eqal to 2. You can find the best by yourself.\n");
-    //     return NULL;
-    // }
-
-    // if(start_point_id >= num_points){
-    //     print_error("Incorrect starting city ID. Starting city ID bigger than all cities number.\n");
-    //     return NULL;
-    // }
-
-    // if(float_calc == 1){
-
-        // Distance** distances_u = calc_dist_table(points, num_points, float_calc);
-
-    // }else{
-
-        // Distance** distances_f = calc_dist_table(points, num_points, float_calc);
-
-    // }
-
-    // Route* naive = find_naive_route(distances_u, num_points);
-
-    // fprintf(stdout, "res: %lu\n", naive->distance_u);
-
-    // return 0;
 
 }

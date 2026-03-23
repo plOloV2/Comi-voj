@@ -9,24 +9,32 @@ Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Rout
         return NULL;
     }
 
-    Route* repitive = malloc(sizeof(Route));
-    if(!repitive)
-        return NULL;
+    Route* repitive = NULL;
 
-    repitive->distance_u = UINT64_MAX;
-
-    repitive->time = omp_get_wtime();
+    double time = omp_get_wtime();
 
     for(size_t i = 0; i < num_points; i++){
 
-        uint64_t now_dist = NN_func(distances, num_points, i)->distance_u;
+        Route* temp = NN_func(distances, num_points, i);
 
-        if(now_dist < repitive->distance_u)
-            repitive->distance_u = now_dist;
+        if(!temp){
+            print_error("NN algorithm returned NULL.\n");
+            free(repitive->city_order);
+            free(repitive);
+            return NULL;
+        }
+
+        if(!repitive || temp->distance_u < repitive->distance_u){
+            repitive = temp;
+        }else {
+            free(temp->city_order);
+            free(temp);
+        }
 
     }
 
-    repitive->time = omp_get_wtime() - repitive->time;
+    time = omp_get_wtime() - time;
+    repitive->time = time;
     return repitive;
 
 }

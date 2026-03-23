@@ -25,6 +25,8 @@ add_executable(${PROJECT_NAME}
     src/UI/TUI_func.c
     src/data_operations/data_prepare.c
     src/data_operations/stack_op.c
+    src/algorithms/runner.c
+    src/algorithms/rand_seq.c
     src/algorithms/nearest_neighbour_fast.c
     src/algorithms/nearest_neighbour_stack.c
     src/algorithms/repetitive_nearest_neighbour.c
