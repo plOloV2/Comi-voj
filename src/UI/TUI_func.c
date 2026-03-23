@@ -81,9 +81,9 @@ void get_file_path(char* path){
 
 int get_rand_point_num(){
 
-    fprintf(stdout, "\nPlease enter number of points to generate (3 to 100): ");
+    fprintf(stdout, "\nPlease enter number of points to generate (6 to 100): ");
 
-    return user_input(3, 100);
+    return user_input(6, 100);
 
 }
 
@@ -143,8 +143,8 @@ void get_algorithm(int* choice_algorithm, int* num_permutations){
     if(*choice_algorithm == 6){
 
         fprintf(stdout, "\nYou have chosen the " ANSI_COLOR_MAGENTA "Random algorithm" ANSI_RESET_ALL ".\n");
-        fprintf(stdout, "Please specify the number of permutations to generate (1 to 1000): ");
-        *num_permutations = user_input(1, 1000);
+        fprintf(stdout, "Please specify the number of permutations to generate (2 to 200): ");
+        *num_permutations = user_input(2, 200);
 
     }else 
         *num_permutations = 0;
