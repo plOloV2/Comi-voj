@@ -28,6 +28,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
         return NULL;
     }
 
+    Stack->stack[0].distance_u = 0;
     Stack->stack[0].city_order[0] = (uint8_t)start_point_id;
     Stack->stack[0].visited[start_point_id] = 1;
     Stack->stack[0].current_city = start_point_id;
@@ -82,71 +83,106 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
             return NULL;
         }
 
+        int num_found = 0;
+        uint8_t min_found[num_points];
+
         for(size_t i = 0; i < num_points; i++){
             if(current.visited[i] || distances[current.current_city * num_points + i] != min)
                 continue;
             
-            if(Stack->stack_top + 1 >= Stack->stack_size){
-
-                Stack->stack_size *= 2;
-                Path_state* temp = realloc(Stack->stack, Stack->stack_size * sizeof(Path_state));
-
-                if(!temp){
-                    print_error("Stack realloc() failed in stack NN.");
-                    Stack->stack_size /= 2;
-                    free(current.city_order);
-                    free(current.visited);
-                    free_stack(Stack);
-                    free(naive->city_order);
-                    free(naive);
-                    return NULL;
-                }
-
-                Stack->stack = temp;
-
-                memset(&Stack->stack[Stack->stack_size / 2], 0, (Stack->stack_size / 2) * sizeof(Path_state));
-
-            }
-
-            Stack->stack_top++;
-
-            Stack->stack[Stack->stack_top].visited = malloc(num_points * sizeof(uint8_t));
-            if(!Stack->stack[Stack->stack_top].visited){
-                print_error("Failed to alloc Stack->stack[Stack->stack_top].visited array in stack NN.\n");
-                Stack->stack_top--;
-                free(current.city_order);
-                free(current.visited);
-                free_stack(Stack);
-                free(naive->city_order);
-                free(naive);
-                return NULL;
-            }
-
-            Stack->stack[Stack->stack_top].city_order = malloc(num_points * sizeof(uint8_t));
-            if(!Stack->stack[Stack->stack_top].city_order){
-                print_error("Failed to alloc Stack->stack[Stack->stack_top].city_order array in stack NN.\n");
-                free(current.city_order);
-                free(current.visited);
-                free(Stack->stack[Stack->stack_top--].visited);
-                free_stack(Stack);
-                free(naive->city_order);
-                free(naive);
-                return NULL;
-            }
-
-            memcpy(Stack->stack[Stack->stack_top].visited, current.visited, num_points);
-            memcpy(Stack->stack[Stack->stack_top].city_order, current.city_order, num_points);
-
-            Stack->stack[Stack->stack_top].visited[i] = 1;
-            Stack->stack[Stack->stack_top].city_order[current.depth] = i;
-            Stack->stack[Stack->stack_top].distance_u = current.distance_u + min;
-            Stack->stack[Stack->stack_top].current_city = i;
-            Stack->stack[Stack->stack_top].depth = current.depth + 1;
+            min_found[num_found++] = i;
 
         }
 
-        free(current.city_order);
-        free(current.visited);
+        if(num_found == 1){
+
+            Stack->stack_top++;
+            Stack->stack[Stack->stack_top].city_order = current.city_order;
+            Stack->stack[Stack->stack_top].visited = current.visited;
+
+            Stack->stack[Stack->stack_top].visited[min_found[0]] = 1;
+            Stack->stack[Stack->stack_top].city_order[current.depth] = min_found[0];
+            Stack->stack[Stack->stack_top].distance_u = current.distance_u + min;
+            Stack->stack[Stack->stack_top].current_city = min_found[0];
+            Stack->stack[Stack->stack_top].depth = current.depth + 1;
+
+        }else {
+
+            for(size_t j = 0; j < num_found; j++){
+
+                int i = min_found[j];
+
+                if(Stack->stack_top + 1 >= Stack->stack_size){
+
+                    Stack->stack_size *= 2;
+                    Path_state* temp = realloc(Stack->stack, Stack->stack_size * sizeof(Path_state));
+
+                    if(!temp){
+                        print_error("Stack realloc() failed in stack NN.");
+                        Stack->stack_size /= 2;
+                        free(current.city_order);
+                        free(current.visited);
+                        free_stack(Stack);
+                        free(naive->city_order);
+                        free(naive);
+                        return NULL;
+                    }
+
+                    Stack->stack = temp;
+
+                    memset(&Stack->stack[Stack->stack_size / 2], 0, (Stack->stack_size / 2) * sizeof(Path_state));
+
+                }
+
+                Stack->stack_top++;
+
+                if(j == num_found - 1){
+
+                    Stack->stack[Stack->stack_top].visited = current.visited;
+                    Stack->stack[Stack->stack_top].city_order = current.city_order;
+
+                }else {
+
+                    Stack->stack[Stack->stack_top].visited = malloc(num_points * sizeof(uint8_t));
+                    if(!Stack->stack[Stack->stack_top].visited){
+                        print_error("Failed to alloc Stack->stack[Stack->stack_top].visited array in stack NN.\n");
+                        Stack->stack_top--;
+                        free(current.city_order);
+                        free(current.visited);
+                        free_stack(Stack);
+                        free(naive->city_order);
+                        free(naive);
+                        return NULL;
+                    }
+
+                    Stack->stack[Stack->stack_top].city_order = malloc(num_points * sizeof(uint8_t));
+                    if(!Stack->stack[Stack->stack_top].city_order){
+                        print_error("Failed to alloc Stack->stack[Stack->stack_top].city_order array in stack NN.\n");
+                        free(current.city_order);
+                        free(current.visited);
+                        free(Stack->stack[Stack->stack_top].visited);
+                        Stack->stack[Stack->stack_top].visited = NULL;
+                        Stack->stack_top--;
+                        free_stack(Stack);
+                        free(naive->city_order);
+                        free(naive);
+                        return NULL;
+                    }
+
+                    memcpy(Stack->stack[Stack->stack_top].visited, current.visited, num_points);
+                    memcpy(Stack->stack[Stack->stack_top].city_order, current.city_order, num_points);
+
+                }
+
+                Stack->stack[Stack->stack_top].visited[i] = 1;
+                Stack->stack[Stack->stack_top].city_order[current.depth] = i;
+                Stack->stack[Stack->stack_top].distance_u = current.distance_u + min;
+                Stack->stack[Stack->stack_top].current_city = i;
+                Stack->stack[Stack->stack_top].depth = current.depth + 1;
+
+            }
+
+        }
 
     }
 
