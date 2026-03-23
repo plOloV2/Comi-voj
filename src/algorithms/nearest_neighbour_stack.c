@@ -23,6 +23,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
     Path_stack* Stack = init_stack(num_points);
     if(!Stack){
         print_error("Stack alloc failed in stack NN algorithm.\n");
+        free(naive->city_order);
+        free(naive);
         return NULL;
     }
 
@@ -72,6 +74,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
 
         if(min == UINT32_MAX){
             print_error("No valid route was found (stack NN). Maybe it's a disconnected graph or the data is corupted?\n");
+            free(current.city_order);
+            free(current.visited);
             free_stack(Stack);
             free(naive->city_order);
             free(naive);
@@ -90,6 +94,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
                 if(!temp){
                     print_error("Stack realloc() failed in stack NN.");
                     Stack->stack_size /= 2;
+                    free(current.city_order);
+                    free(current.visited);
                     free_stack(Stack);
                     free(naive->city_order);
                     free(naive);
@@ -108,6 +114,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
             if(!Stack->stack[Stack->stack_top].visited){
                 print_error("Failed to alloc Stack->stack[Stack->stack_top].visited array in stack NN.\n");
                 Stack->stack_top--;
+                free(current.city_order);
+                free(current.visited);
                 free_stack(Stack);
                 free(naive->city_order);
                 free(naive);
@@ -117,6 +125,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
             Stack->stack[Stack->stack_top].city_order = malloc(num_points * sizeof(uint8_t));
             if(!Stack->stack[Stack->stack_top].city_order){
                 print_error("Failed to alloc Stack->stack[Stack->stack_top].city_order array in stack NN.\n");
+                free(current.city_order);
+                free(current.visited);
                 free(Stack->stack[Stack->stack_top--].visited);
                 free_stack(Stack);
                 free(naive->city_order);
@@ -140,9 +150,9 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
 
     }
 
-    free_stack(Stack);
-
     naive->time = omp_get_wtime() - naive->time;
+
+    free_stack(Stack);
     return naive;
 
 }

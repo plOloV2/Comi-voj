@@ -2,78 +2,99 @@
 #include "UI/TUI_func.h"
 #include "data_operations/route_struct.h"
 
-Route* brute_force(uint32_t* distances, size_t num_points){
-
+static inline void swap_numbers(uint8_t* a, uint8_t* b){
+    uint8_t temp = *a;
+    *a = *b;
+    *b = temp;
 }
 
-/*
-function next_permutation(array):
-    n = length of array
-    i = n - 2
-    
-    // Step 1: Find the largest index i such that array[i] < array[i + 1]
-    while i >= 0 and array[i] >= array[i + 1]:
-        i = i - 1
-        
-    // If no such index exists, we've checked all permutations
-    if i < 0:
-        return false 
-        
-    // Step 2: Find the largest index j greater than i such that array[i] < array[j]
-    j = n - 1
-    while array[j] <= array[i]:
-        j = j - 1
-        
-    // Step 3: Swap the values of array[i] and array[j]
-    swap(array[i], array[j])
-    
-    // Step 4: Reverse the sequence from array[i + 1] up to the end
-    left = i + 1
-    right = n - 1
-    while left < right:
-        swap(array[left], array[right])
-        left = left + 1
-        right = right - 1
-        
-    return true
-*/
+Route* brute_force(uint32_t* distances, size_t num_points){
 
-/*
-function TSP_Brute_Force(distance_matrix, num_cities):
-    // Fix city 0 as the start and end point.
-    // We only permute the intermediate cities: 1 through (num_cities - 1)
-    cities_to_visit = [1, 2, ..., num_cities - 1]
+    if(num_points < 3){
+        print_error("Graph size is less or eqal to 2. You can find the best route by yourself.\n");
+        return NULL;
+    }
+
+    Route* result = malloc(sizeof(Route));
+    if(!result){
+        print_error("Route struct result alloc failed in BF algorithm, exiting...\n");
+        return NULL;
+    }
     
-    min_path_cost = INFINITY
-    best_path = []
-    
-    has_more_permutations = true
-    
-    while has_more_permutations == true:
-        current_cost = 0
+    result->city_order = malloc(num_points * sizeof(uint8_t));
+    if(!result->city_order){
+        print_error("Result->city_order alloc failed in BF algorithm, exiting...\n");
+        free(result);
+        return NULL;
+    }
+
+    uint8_t* temp_permutation = malloc(num_points * sizeof(uint8_t));
+    if(!temp_permutation){
+        print_error("Temp_permutation alloc failed in BF algorithm, exiting...\n");
+        free(result->city_order);
+        free(result);
+        return NULL;
+    }
+
+    for(size_t i = 0; i < num_points; i++)
+        temp_permutation[i] = i;
+
+    result->distance_u = UINT64_MAX;
+    result->time = omp_get_wtime();
+   
+    while(1){
+
+        uint64_t temp_dist = 0;
+        for(size_t i = 1; i < num_points; i++)
+            temp_dist += distances[temp_permutation[i - 1] * num_points + temp_permutation[i]];
         
-        // 1. Add the distance from the Start City (0) to the first city in the array
-        current_cost = current_cost + distance_matrix[0][cities_to_visit[0]]
-        
-        // 2. Add the distances between consecutive cities in the array
-        for k from 0 to length(cities_to_visit) - 2:
-            from_city = cities_to_visit[k]
-            to_city = cities_to_visit[k + 1]
-            current_cost = current_cost + distance_matrix[from_city][to_city]
-            
-        // 3. Add the distance from the last city in the array back to Start City (0)
-        last_city = cities_to_visit[length(cities_to_visit) - 1]
-        current_cost = current_cost + distance_matrix[last_city][0]
-        
-        // 4. Compare current_cost with our lowest found cost so far
-        if current_cost < min_path_cost:
-            min_path_cost = current_cost
-            // Create a full path array for the result
-            best_path = [0] + copy_of(cities_to_visit) + [0] 
-            
-        // 5. Generate the next order of cities. 
-        // If there are none left, this returns false and the loop ends.
-        has_more_permutations = next_permutation(cities_to_visit)
-        
-    return min_path_cost, best_path
-*/
+        temp_dist += distances[temp_permutation[num_points - 1] * num_points + temp_permutation[0]];
+
+        if(temp_dist < result->distance_u){
+
+            result->distance_u = temp_dist;
+            memcpy(result->city_order, temp_permutation, num_points * sizeof(uint8_t));
+
+        }
+
+        uint32_t k = UINT32_MAX;
+        uint32_t l = UINT32_MAX;
+
+        for(size_t i = num_points - 2; i >= 1; i--){
+            if(temp_permutation[i] < temp_permutation[i + 1]){
+                k = i;
+                break;
+            }
+
+        }
+
+        if(k == UINT32_MAX)
+            break;
+
+        for(size_t i = num_points - 1; i > k; i--){
+            if(temp_permutation[k] < temp_permutation[i]){
+                l = i;
+                break;
+            }
+
+        }
+
+        swap_numbers(&temp_permutation[l], &temp_permutation[k]);
+
+        size_t left = k + 1;
+        size_t right = num_points - 1;
+        while(left < right){
+            swap_numbers(&temp_permutation[left], &temp_permutation[right]);
+            left++;
+            right--;
+        }
+
+    }
+
+    result->time = omp_get_wtime() - result->time;
+
+    free(temp_permutation);
+
+    return result;
+
+}
