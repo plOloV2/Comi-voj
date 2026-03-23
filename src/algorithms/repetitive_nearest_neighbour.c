@@ -5,7 +5,7 @@
 Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Route* (*NN_func)(uint32_t* distances, size_t num_points, int start_point_id)){
 
     if(num_points <= 2){
-        print_error("Graph size is less or eqal to 2. You can find the best by yourself.\n");
+        print_error("Graph size is less or eqal to 2. You can find the best route by yourself.\n");
         return NULL;
     }
 
