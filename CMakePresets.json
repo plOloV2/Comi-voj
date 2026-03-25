@@ -23,11 +23,23 @@
       }
     },
     {
-      "name": "release_gcc",
-      "displayName": "Release GCC",
-      "description": "Release GCC build with optimizations",
+      "name": "release_gcc_native",
+      "displayName": "Release GCC native",
+      "description": "Release GCC build with optimizations for current system",
       "inherits": "base-ninja",
       "cacheVariables": {
+        "USE_NATIVE_ARCH": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc"
+      }
+    },
+    {
+      "name": "release_gcc_generic",
+      "displayName": "Release GCC generic",
+      "description": "Release GCC build with optimizations for generic system",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "USE_NATIVE_ARCH": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc"
       }
@@ -43,11 +55,23 @@
       }
     },
     {
-      "name": "release_clang",
-      "displayName": "Release CLANG",
-      "description": "Release CLANG build with optimizations",
+      "name": "release_clang_native",
+      "displayName": "Release CLANG native",
+      "description": "Release CLANG build with optimizations for current system",
       "inherits": "base-ninja",
       "cacheVariables": {
+        "USE_NATIVE_ARCH": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang"
+      }
+    },
+    {
+      "name": "release_clang_generic",
+      "displayName": "Release CLANG generic",
+      "description": "Release CLANG build with optimizations for generic system",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "USE_NATIVE_ARCH": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "clang"
       }
@@ -65,7 +89,7 @@
     {
       "name": "release_icx",
       "displayName": "Release ICX",
-      "description": "Release ICX build with optimizations",
+      "description": "Release ICX build with optimizations for current system",
       "inherits": "base-ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -79,16 +103,24 @@
       "configurePreset": "debug_gcc"
     },
     {
-      "name": "release_gcc",
-      "configurePreset": "release_gcc"
+      "name": "release_gcc_native",
+      "configurePreset": "release_gcc_native"
+    },
+    {
+      "name": "release_gcc_generic",
+      "configurePreset": "release_gcc_generic"
     },
     {
       "name": "debug_clang",
       "configurePreset": "debug_clang"
     },
     {
-      "name": "release_clang",
-      "configurePreset": "release_clang"
+      "name": "release_clang_native",
+      "configurePreset": "release_clang_native"
+    },
+    {
+      "name": "release_clang_generic",
+      "configurePreset": "release_clang_generic"
     },
     {
       "name": "debug_icx",

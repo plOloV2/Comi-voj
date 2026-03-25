@@ -11,6 +11,8 @@ void greeter();
 
 int start_choice();
 
+void display_full_ran_info();
+
 int display_test_menu();
 
 void get_file_path(char* path);

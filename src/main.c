@@ -4,20 +4,31 @@
 #include "data_operations/data_prepare.h"
 
 Route* run_choosen_algorithm(int algorithm, int perms, uint32_t* distances, size_t num_points);
+Route**** run_whole_calculation(uint32_t*** data_table);
+int save_results_to_csv(Route**** results);
 
 int main(){
 
     greeter();
 
-    uint64_t seed;
-    create_rand_seed(&seed);
-
-    xoshiro256_state RNG;
-    xoshiro_init(&RNG, seed); 
-
     if(start_choice() == 1){
 
-        print_error("test");
+        display_full_ran_info();
+
+        fprintf(stdout, "\nCreating random data... ");
+
+        double cz = omp_get_wtime();
+        uint32_t*** data_table = create_random_distances_for_calc();
+        cz = (omp_get_wtime() - cz) * 1000.0;
+
+        fprintf(stdout, "done (took %.3lfms)\n\n", cz);
+        cz = omp_get_wtime();
+
+        Route**** calc_results = run_whole_calculation(data_table);
+
+        if(save_results_to_csv(calc_results)){
+            fprintf(stdout, "All was saved safely.\n");
+        }
 
     }else{
 
@@ -27,9 +38,16 @@ int main(){
         size_t num_points = 0;
         Route* result = NULL;
 
+        uint64_t seed;
+        create_rand_seed(&seed);
+
+        xoshiro256_state RNG;
+        xoshiro_init(&RNG, seed); 
+
         while(run){
 
             int conf = display_test_menu();
+
 
             switch(conf){
                 case 0:

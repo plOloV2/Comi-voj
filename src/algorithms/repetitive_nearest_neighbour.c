@@ -19,8 +19,10 @@ Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Rout
 
         if(!temp){
             print_error("NN algorithm returned NULL.\n");
-            free(repitive->city_order);
-            free(repitive);
+            if(repitive){
+                free(repitive->city_order);
+                free(repitive);
+            }
             return NULL;
         }
 

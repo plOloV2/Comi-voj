@@ -108,11 +108,11 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
 
         }else {
 
-            for(size_t j = 0; j < num_found; j++){
+            for(int j = 0; j < num_found; j++){
 
                 int i = min_found[j];
 
-                if(Stack->stack_top + 1 >= Stack->stack_size){
+                if((size_t)Stack->stack_top + 1 >= Stack->stack_size){
 
                     Stack->stack_size *= 2;
                     Path_state* temp = realloc(Stack->stack, Stack->stack_size * sizeof(Path_state));

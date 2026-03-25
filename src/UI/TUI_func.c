@@ -38,7 +38,7 @@ void greeter(){
 int start_choice(){
 
     fprintf(stdout, "\nWould you like to:"
-                    "\n1. " ANSI_COLOR_BLUE     "Run simulation"                ANSI_RESET_ALL
+                    "\n1. " ANSI_COLOR_BLUE     "Run calculations"              ANSI_RESET_ALL
                     "\n2. " ANSI_COLOR_GREEN    "Test implemented algorithms"   ANSI_RESET_ALL);
 
     fprintf(stdout, "\nYour choice: ");
@@ -46,9 +46,17 @@ int start_choice(){
     return user_input(1, 2);
 }
 
+void display_full_ran_info(){
+
+    fprintf(stdout, "\nStarting full calculations run.\n"
+            ANSI_COLOR_YELLOW ANSI_STYLE_BOLD "ALL" ANSI_RESET_ALL " algorithms will be run " ANSI_COLOR_YELLOW ANSI_STYLE_ITALIC "100" ANSI_RESET_ALL " times for this data sizes: {"
+            ANSI_STYLE_ITALIC "8, 9, 10, 11, 12, 13, 14" ANSI_RESET_ALL "}.\n");
+
+}
+
 int display_test_menu(){
 
-    fprintf(stdout, "\n" ANSI_STYLE_BOLD "--- TEST MENU ---" ANSI_RESET_ALL "\n");
+    fprintf(stdout, "\n"  ANSI_STYLE_BOLD "--- TEST MENU ---" ANSI_RESET_ALL "\n");
     fprintf(stdout, "1. " ANSI_COLOR_YELLOW     "Load data from a file"                 ANSI_RESET_ALL "\n");
     fprintf(stdout, "2. " ANSI_COLOR_CYAN       "Generate random data"                  ANSI_RESET_ALL "\n");
     fprintf(stdout, "3. " ANSI_COLOR_GREEN      "Display last loaded/generated data"    ANSI_RESET_ALL "\n");
@@ -143,8 +151,8 @@ void get_algorithm(int* choice_algorithm, int* num_permutations){
     if(*choice_algorithm == 6){
 
         fprintf(stdout, "\nYou have chosen the " ANSI_COLOR_MAGENTA "Random algorithm" ANSI_RESET_ALL ".\n");
-        fprintf(stdout, "Please specify the number of permutations to generate (2 to 200): ");
-        *num_permutations = user_input(2, 200);
+        fprintf(stdout, "Please specify the number of permutations to generate (0 to 200, 0 -> 10N): ");
+        *num_permutations = user_input(0, 200);
 
     }else 
         *num_permutations = 0;
@@ -158,7 +166,7 @@ void display_Route(Route* data, size_t num_points){
         return;
     }
 
-    fprintf(stdout, "Algorithm found route of length " ANSI_COLOR_GREEN ANSI_STYLE_BOLD "%lu" ANSI_RESET_ALL " in " ANSI_COLOR_BLUE ANSI_STYLE_BOLD "%6lfs" ANSI_RESET_ALL ".\n", data->distance_u, data->time);
+    fprintf(stdout, "Algorithm found route of length " ANSI_COLOR_GREEN ANSI_STYLE_BOLD "%lu" ANSI_RESET_ALL " in " ANSI_COLOR_BLUE ANSI_STYLE_BOLD "%.6lfs" ANSI_RESET_ALL ".\n", data->distance_u, data->time);
     fprintf(stdout, "Route found:\n");
 
     for(size_t i = 0; i < num_points; i++)
@@ -180,4 +188,3 @@ int check_data_created(uint32_t* dist, size_t num_points){
     return 1;
 
 }
-

@@ -7,4 +7,6 @@ uint32_t* parse_file(char* file_path, size_t* num_points);
 
 uint32_t* create_random_distances(size_t num_points, xoshiro256_state* xos_state);
 
+uint32_t*** create_random_distances_for_calc();
+
 #endif
