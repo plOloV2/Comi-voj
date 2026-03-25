@@ -2,7 +2,7 @@
 #include "UI/TUI_func.h"
 #include "data_operations/route_struct.h"
 
-static const char* algorithms_names[6] = {"NN (fast)", "NN (stack)", "RNN (fast)", "RNN (stack)", "Random", "BF"};
+static const char* algorithms_names[6] = {"NN (fast)", "NN (stack)", "RNN (fast)", "RNN (stack)", "BF", "Random"};
 
 int save_results_to_csv(Route**** results){
     
