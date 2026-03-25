@@ -13,9 +13,9 @@ int save_results_to_csv(Route**** results){
 
     char filename[256];
 
-    for(int size_idx = 0; size_idx < 9; size_idx++){
+    for(int size_idx = 0; size_idx < 7; size_idx++){
         
-        int true_size = size_idx + 7;
+        int true_size = size_idx + 8;
         
         snprintf(filename, sizeof(filename), "results_size_%d.csv", true_size);
         
