@@ -95,6 +95,29 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "icx"
       }
+    },
+    {
+      "name": "cross_windows_clang_static",
+      "displayName": "Cross-compile Windows Clang (Static)",
+      "description": "Cross-compile for Windows using Clang with static linking",
+      "inherits": "base-ninja",
+      "toolchainFile": "${sourceDir}/toolchains/windows-x86_64-clang.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "USE_NATIVE_ARCH": "OFF"
+      }
+    },
+    {
+      "name": "cross_aarch64_clang",
+      "displayName": "Cross-compile AArch64 Linux Clang",
+      "description": "Cross-compile for AArch64 Linux using Clang (Tuned for Cortex-A76)",
+      "inherits": "base-ninja",
+      "toolchainFile": "${sourceDir}/toolchains/linux-aarch64-clang.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "USE_NATIVE_ARCH": "OFF",
+        "CMAKE_C_FLAGS": "-mcpu=cortex-a76"
+      }
     }
   ],
   "buildPresets": [
@@ -129,6 +152,14 @@
     {
       "name": "release_icx",
       "configurePreset": "release_icx"
+    },
+    {
+      "name": "cross_windows_clang_static",
+      "configurePreset": "cross_windows_clang_static"
+    },
+    {
+      "name": "cross_aarch64_clang",
+      "configurePreset": "cross_aarch64_clang"
     }
   ]
 }
