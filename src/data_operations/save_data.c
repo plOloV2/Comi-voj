@@ -28,7 +28,7 @@ int save_results_to_csv(Route**** results){
 
         fprintf(f, "Instance");
         for(int algo_idx = 0; algo_idx < 6; algo_idx++)
-            fprintf(f, ";%s Time (s);%s Distance", algorithms_names[algo_idx], algorithms_names[algo_idx]);
+            fprintf(f, ",%s Time (s),%s Distance", algorithms_names[algo_idx], algorithms_names[algo_idx]);
         
         fprintf(f, "\n");
 
