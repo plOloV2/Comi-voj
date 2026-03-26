@@ -77,7 +77,11 @@ void get_file_path(char* path){
     if(scanf("%255s", temp) != 1) 
         temp[0] = '\0';
 
-    if(realpath(temp, path) == NULL){
+    #ifdef _WIN32
+        if(_fullpath(path, temp, 4096) == NULL){
+    #else
+        if(realpath(temp, path) == NULL){
+    #endif
         print_error("Could not resolve path: ");
         fprintf(stdout, "%s\n   ", temp);
         return; 
@@ -102,7 +106,7 @@ void disp_dist(uint32_t* dist, size_t num_points){
         return;
     }
 
-    fprintf(stdout, "\nNumber of points in table: " ANSI_STYLE_BOLD "%lu" ANSI_RESET_ALL "\n", num_points);
+    fprintf(stdout, "\nNumber of points in table: " ANSI_STYLE_BOLD "%zu" ANSI_RESET_ALL "\n", num_points);
     fprintf(stdout, "Table with all distances, incorect ones are marked by " ANSI_STYLE_ITALIC ANSI_COLOR_YELLOW "UINT32_MAX" ANSI_RESET_ALL " (" ANSI_COLOR_RED "4294967295" ANSI_RESET_ALL "):\n\n");
 
     for(size_t i = 0; i < num_points; i++){
@@ -166,7 +170,7 @@ void display_Route(Route* data, size_t num_points){
         return;
     }
 
-    fprintf(stdout, "Algorithm found route of length " ANSI_COLOR_GREEN ANSI_STYLE_BOLD "%lu" ANSI_RESET_ALL " in " ANSI_COLOR_BLUE ANSI_STYLE_BOLD "%.6lfs" ANSI_RESET_ALL ".\n", data->distance_u, data->time);
+    fprintf(stdout, "Algorithm found route of length " ANSI_COLOR_GREEN ANSI_STYLE_BOLD "%llu" ANSI_RESET_ALL " in " ANSI_COLOR_BLUE ANSI_STYLE_BOLD "%.6lfs" ANSI_RESET_ALL ".\n", (unsigned long long)data->distance_u, data->time);
     fprintf(stdout, "Route found:\n");
 
     for(size_t i = 0; i < num_points; i++)

@@ -11,7 +11,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(USE_NATIVE_ARCH)
         add_compile_options(-march=native)
     else()
-        add_compile_options(-march=generic)
+        add_compile_options(-mtune=generic)
     endif()
 endif()
 

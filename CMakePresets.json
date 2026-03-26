@@ -118,6 +118,17 @@
         "USE_NATIVE_ARCH": "OFF",
         "CMAKE_C_FLAGS": "-mcpu=cortex-a76"
       }
+    },
+    {
+      "name": "cross_windows_gcc_static",
+      "displayName": "Cross-compile Windows GCC (Static)",
+      "description": "Cross-compile for Windows using GCC with static linking",
+      "inherits": "base-ninja",
+      "toolchainFile": "${sourceDir}/toolchains/windows-x86_64-gcc.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "USE_NATIVE_ARCH": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -160,6 +171,10 @@
     {
       "name": "cross_aarch64_clang",
       "configurePreset": "cross_aarch64_clang"
+    },
+    {
+      "name": "cross_windows_gcc_static",
+      "configurePreset": "cross_windows_gcc_static"
     }
   ]
 }

@@ -43,7 +43,7 @@ int save_results_to_csv(Route**** results){
                     double time = results[algo_idx][size_idx][instance_idx]->time;
                     uint64_t dist = results[algo_idx][size_idx][instance_idx]->distance_u;
                     
-                    fprintf(f, ",%.9f,%lu", time, dist); 
+                    fprintf(f, ",%.9f,%llu", time, (unsigned long long)dist); 
                     
                 }else {
                     fprintf(f, ",,");
