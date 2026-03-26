@@ -56,4 +56,17 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_C xoshiro256)
+if(WIN32)
+
+    target_compile_options(${PROJECT_NAME} PRIVATE -fopenmp)
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE 
+        -static
+        -static-libgcc
+        -lgomp 
+        -lwinpthread 
+        xoshiro256
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C xoshiro256)
+endif()
