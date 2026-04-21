@@ -103,7 +103,7 @@ int main(){
 
     }else if(decision == 3){
 
-        run_bb_experiment(120.0);
+        run_bb_experiment(240.0);
 
     }
 

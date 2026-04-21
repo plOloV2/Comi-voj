@@ -224,6 +224,9 @@ void run_bb_experiment(double timeout_seconds){
 
             // Pętla po inicjalizacji górnego ograniczenia (0: Brak/MAX, 1: RNN)
             for(int rnn_init = 0; rnn_init < 2; rnn_init++){
+
+                if(strat == 1 && rnn_init == 0)
+                    continue;
                 
                 uint8_t mode = (strat << 1) | rnn_init;
                 double total_time = 0.0;
