@@ -6,12 +6,15 @@
 Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, uint32_t* distances, size_t num_points);
 Route**** run_whole_calculation(uint32_t*** data_table);
 int save_results_to_csv(Route**** results);
+void run_bb_experiment(double timeout_seconds);
 
 int main(){
 
     greeter();
 
-    if(start_choice() == 1){
+    int decision = start_choice();
+
+    if(decision == 1){
 
         display_full_ran_info();
 
@@ -30,7 +33,7 @@ int main(){
             fprintf(stdout, "All was saved safely.\n");
         }
 
-    }else{
+    }else if(decision == 2){
 
         int run = 1;
 
@@ -81,7 +84,6 @@ int main(){
                     
                     get_algorithm(&algorithm, &perms_or_mode, &timeout);
 
-                    // Przekazujemy timeout do runnera
                     result = run_choosen_algorithm(algorithm, perms_or_mode, timeout, dist, num_points);
                     display_Route(result, num_points);
 
@@ -98,6 +100,10 @@ int main(){
         }
         
         free(result);
+
+    }else if(decision == 3){
+
+        run_bb_experiment(120.0);
 
     }
 

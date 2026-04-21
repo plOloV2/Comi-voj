@@ -187,3 +187,97 @@ Route**** run_whole_calculation(uint32_t*** data_table){
     return results;
 
 }
+
+uint32_t* create_random_distances(size_t num_points, xoshiro256_state* xos_state);
+
+void run_bb_experiment(double timeout_seconds){
+
+    FILE* file = fopen("bb_results_comparison.csv", "w");
+    if(!file){
+        print_error("Nie mozna otworzyc bb_results_comparison.csv do zapisu.\n");
+        return;
+    }
+
+    // Nagłówek pliku CSV
+    fprintf(file, "N,Algorytm,RNN_Init,Avg_Time_s,Timeout_Percent\n");
+    
+    // Inicjalizacja generatora RNG
+    uint64_t seed;
+    create_rand_seed(&seed);
+    xoshiro256_state RNG;
+    xoshiro_init(&RNG, seed);
+
+    const char* strategy_names[] = {"DFS", "BFS", "Best-FS"};
+
+    // Pętla po rozmiarach problemu N (12-21)
+    for(int n = 12; n <= 21; n++){
+        fprintf(stdout, "\n" ANSI_STYLE_BOLD "Rozpoczynanie testow dla N = %d" ANSI_RESET_ALL "\n", n);
+
+        // Generujemy 100 instancji testowych, które będą wspólne dla wszystkich algorytmów
+        uint32_t** test_instances = malloc(100 * sizeof(uint32_t*));
+        for (int i = 0; i < 100; i++)
+            test_instances[i] = create_random_distances(n, &RNG);
+        
+
+        // Pętla po strategiach (0: DFS, 1: BFS, 2: Best-FS)
+        for(int strat = 0; strat < 3; strat++){
+
+            // Pętla po inicjalizacji górnego ograniczenia (0: Brak/MAX, 1: RNN)
+            for(int rnn_init = 0; rnn_init < 2; rnn_init++){
+                
+                uint8_t mode = (strat << 1) | rnn_init;
+                double total_time = 0.0;
+                int timeouts = 0;
+
+                fprintf(stdout, "\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Postep: " ANSI_COLOR_YELLOW "  0%%" ANSI_RESET_ALL, 
+                        strategy_names[strat], rnn_init ? "TAK" : "NIE");
+                fflush(stdout);
+
+                // Testujemy 100 tych samych instancji dla bieżącej konfiguracji
+                for(int i = 0; i < 100; i++){
+
+                    Route* res = branch_and_bound(test_instances[i], n, timeout_seconds, mode);
+                    
+                    if(res){
+                        total_time += res->time;
+                        
+                        // Zliczamy timeout
+                        if(res->time >= timeout_seconds - 0.001) 
+                            timeouts++;
+                        
+
+                        free(res->city_order);
+                        free(res);
+
+                    }
+
+                    fprintf(stdout, "\r\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Postep: " ANSI_COLOR_YELLOW "%3d%%" ANSI_RESET_ALL, 
+                            strategy_names[strat], rnn_init ? "TAK" : "NIE", i + 1);
+                    fflush(stdout);
+
+                }
+
+                double avg_time = total_time / 100.0;
+
+                fprintf(stdout, "\r\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | " ANSI_COLOR_GREEN "Gotowe." ANSI_RESET_ALL " (Avg: " ANSI_COLOR_GREEN "%.4lfs" ANSI_RESET_ALL ", Timeouts: " ANSI_COLOR_RED "%d%%" ANSI_RESET_ALL ")    \n", 
+                        strategy_names[strat], rnn_init ? "TAK" : "NIE", avg_time, timeouts);
+
+                fprintf(file, "%d,%s,%d,%.9lf,%d\n", n, strategy_names[strat], rnn_init, avg_time, timeouts);
+                fflush(file);
+                
+            }
+
+        }
+
+        // Zwalnianie pamięci instancji testowych po przetestowaniu wszystkich algorytmów dla danego N
+        for(int i = 0; i < 100; i++)
+            free(test_instances[i]);
+        
+        free(test_instances);
+
+    }
+
+    fclose(file);
+    fprintf(stdout, "\nEksperyment zakonczony. Wyniki zapisano w " ANSI_STYLE_BOLD "bb_results_comparison.csv" ANSI_RESET_ALL ".\n");
+
+}

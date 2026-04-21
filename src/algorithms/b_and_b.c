@@ -324,7 +324,7 @@ CLEANUP_BFS:
 
 }
 
-void bb_best(uint32_t* distances, size_t num_points, [[maybe_unused]] double timeout_seconds, Route* best_route, uint32_t* min_out);
+void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] double timeout_seconds, Route* best_route);
 
 /*
 mode    -> last bit: use RNN for  upper bound or not
@@ -392,7 +392,7 @@ Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_s
             bb_bfs(distances, num_points, timeout_seconds, best_route, min_out);
             break;
         case 2:
-            bb_best(distances, num_points, timeout_seconds, best_route, min_out);
+            bb_best(distances, num_points, timeout_seconds, best_route);
             break;
         
         default:
