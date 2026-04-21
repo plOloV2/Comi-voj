@@ -14,4 +14,6 @@ Route* brute_force(uint32_t* distances, size_t num_points);
 
 Route* rand_seq(uint32_t* distances, size_t num_points, int perms);
 
+Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_seconds, uint8_t mode);
+
 #endif

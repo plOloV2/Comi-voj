@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 4.1)
 project(comi_voj C)
 
 set(CMAKE_C_STANDARD 23)
@@ -30,6 +30,8 @@ add_executable(${PROJECT_NAME}
     src/data_operations/data_prepare.c
     src/data_operations/stack_op.c
     src/data_operations/save_data.c
+    src/algorithms/b_and_b_best.c
+    src/algorithms/b_and_b.c
     src/algorithms/rand_seq.c
     src/algorithms/nearest_neighbour_fast.c
     src/algorithms/nearest_neighbour_stack.c
@@ -47,13 +49,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE inc)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pipe)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT ipo_supported)
-    if(ipo_supported)
-        set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-        set_property(TARGET xoshiro256 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-    endif()
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+if(ipo_supported)
+    message(STATUS "IPO/LTO is supported. Enabling for Release build.")
+    set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+else()
+    message(WARNING "IPO/LTO is not supported: ${ipo_error}")
 endif()
 
 if(WIN32)

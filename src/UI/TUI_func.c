@@ -127,7 +127,7 @@ void disp_dist(uint32_t* dist, size_t num_points){
 
 }
 
-void get_algorithm(int* choice_algorithm, int* num_permutations){
+void get_algorithm(int* choice_algorithm, int* num_perms_or_mode, double* timeout){
 
     fprintf(stdout, "\nWhich algorithm would you like to run?\n");
     fprintf(stdout, "1. " ANSI_COLOR_BLUE ANSI_STYLE_BOLD       "N" ANSI_RESET_ALL ANSI_COLOR_BLUE      "earest "       ANSI_STYLE_BOLD "N"
@@ -148,24 +148,48 @@ void get_algorithm(int* choice_algorithm, int* num_permutations){
             ANSI_RESET_ALL ANSI_COLOR_GREEN "orce (BF)\n"       ANSI_RESET_ALL);
 
     fprintf(stdout, "6. " ANSI_COLOR_MAGENTA ANSI_STYLE_BOLD    "R" ANSI_RESET_ALL ANSI_COLOR_MAGENTA   "andom algorithm\n" ANSI_RESET_ALL);
+
+    fprintf(stdout, "7. " ANSI_COLOR_YELLOW ANSI_STYLE_BOLD     "B" ANSI_RESET_ALL ANSI_COLOR_YELLOW    "ranch "        ANSI_STYLE_BOLD "& B"
+            ANSI_RESET_ALL ANSI_COLOR_YELLOW    "ound (B&B)\n"       ANSI_RESET_ALL);
+
     fprintf(stdout, "Your choice: ");
 
-    *choice_algorithm = user_input(1, 6);
+    *choice_algorithm = user_input(1, 7);
 
     if(*choice_algorithm == 6){
 
         fprintf(stdout, "\nYou have chosen the " ANSI_COLOR_MAGENTA "Random algorithm" ANSI_RESET_ALL ".\n");
         fprintf(stdout, "Please specify the number of permutations to generate (0 to 200, 0 -> 10N): ");
-        *num_permutations = user_input(0, 200);
+        *num_perms_or_mode = user_input(0, 200);
 
-    }else 
-        *num_permutations = 0;
+    }else if(*choice_algorithm == 7){
+        
+        fprintf(stdout, "\nYou have chosen " ANSI_COLOR_YELLOW "Branch & Bound" ANSI_RESET_ALL ".\n");
+        
+        fprintf(stdout, "Choose search strategy (0: DFS, 1: BFS, 2: Best-FS): ");
+        int strat = user_input(0, 2);
+        
+        fprintf(stdout, "Use RNN to find initial Upper Bound? (1: Yes, 0: No): ");
+        int rnn = user_input(0, 1);
+        
+        *num_perms_or_mode = (strat << 1) | rnn;
+
+        fprintf(stdout, "Enter timeout in seconds (e.g. 120, 300): ");
+        while(scanf("%lf", timeout) != 1 || *timeout <= 0.0){
+            int c;
+            while((c = getchar()) != '\n' && c != EOF);
+            fprintf(stdout, "Incorrect timeout value. Try again: ");
+        }
+
+    } else {
+        *num_perms_or_mode = 0;
+    }
     
 }
 
 void display_Route(Route* data, size_t num_points){
 
-    if(!data || !data->city_order || data->distance_u == 0 || data->distance_u == UINT64_MAX || data->time <= 0.0){
+    if(!data || !data->city_order || data->distance_u == 0 || data->distance_u == UINT64_MAX || data->time < 0.0){
         print_error("Route* provided is broken.\n");
         return;
     }

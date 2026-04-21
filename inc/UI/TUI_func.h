@@ -21,7 +21,7 @@ int get_rand_point_num();
 
 void disp_dist(uint32_t* dist, size_t num_points);
 
-void get_algorithm(int* choice_algorithm, int* num_permutations);
+void get_algorithm(int* choice_algorithm, int* num_perms_or_mode, double* timeout);
 
 void display_Route(Route* data, size_t num_points);
 

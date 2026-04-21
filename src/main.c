@@ -3,7 +3,7 @@
 #include "UI/TUI_func.h"
 #include "data_operations/data_prepare.h"
 
-Route* run_choosen_algorithm(int algorithm, int perms, uint32_t* distances, size_t num_points);
+Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, uint32_t* distances, size_t num_points);
 Route**** run_whole_calculation(uint32_t*** data_table);
 int save_results_to_csv(Route**** results);
 
@@ -76,10 +76,13 @@ int main(){
                     if(!good_to_go)
                         break;
 
-                    int algorithm = 0, perms = 0;
-                    get_algorithm(&algorithm, &perms);
+                    int algorithm = 0, perms_or_mode = 0;
+                    double timeout = 0.0;
+                    
+                    get_algorithm(&algorithm, &perms_or_mode, &timeout);
 
-                    result = run_choosen_algorithm(algorithm, perms, dist, num_points);
+                    // Przekazujemy timeout do runnera
+                    result = run_choosen_algorithm(algorithm, perms_or_mode, timeout, dist, num_points);
                     display_Route(result, num_points);
 
                     if(result)

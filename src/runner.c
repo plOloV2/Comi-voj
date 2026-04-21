@@ -2,7 +2,7 @@
 #include "algorithms.h"
 #include "UI/TUI_func.h"
 
-Route* run_choosen_algorithm(int algorithm, int perms, uint32_t* distances, size_t num_points){
+Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, uint32_t* distances, size_t num_points){
 
     Route* result = NULL;
 
@@ -28,7 +28,11 @@ Route* run_choosen_algorithm(int algorithm, int perms, uint32_t* distances, size
             break;
         
         case 6:
-            result = rand_seq(distances, num_points, perms);
+            result = rand_seq(distances, num_points, perms_or_mode);
+            break;
+
+        case 7:
+            result = branch_and_bound(distances, num_points, timeout, (uint8_t)perms_or_mode);
             break;
         
     }
