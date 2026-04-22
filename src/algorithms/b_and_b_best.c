@@ -7,18 +7,18 @@ typedef struct {
     uint64_t lower_bound;
     uint32_t* matrix;
     
-    // Tablice śledzące, które wiersze i kolumny są jeszcze aktywne (nie wykreślone)
+    // Tablice śledzące, które wiersze i kolumny są jeszcze nie wykreślone
     uint8_t* active_rows;
     uint8_t* active_cols;
     
-    // Zapisane krawędzie (skąd -> dokąd), które na pewno weszły do trasy
+    // Zapisane krawędzie, które weszły do trasy
     int* path_from;
     int* path_to;
-    int edges_count;         // Ile krawędzi już wybraliśmy
+    int edges_count;
 
 } Little_Node;
 
-// Struktura Kolejki Priorytetowej (Min-Heap)
+// Min-Heap
 typedef struct {
     Little_Node** heap;
     size_t capacity;
@@ -226,13 +226,11 @@ static void find_best_zero(Little_Node* node, size_t num_points, int* best_row, 
 
             if(node->matrix[i * num_points + j] == 0){
                 
-                // Znajdź minimum w wierszu 'i' pomijając kolumnę 'j'
                 uint32_t min_row = UINT32_MAX;
                 for(size_t k = 0; k < num_points; k++)
                     if(k != j && node->active_cols[k] && node->matrix[i * num_points + k] < min_row)
                         min_row = node->matrix[i * num_points + k];
 
-                // Znajdź minimum w kolumnie 'j' pomijając wiersz 'i'
                 uint32_t min_col = UINT32_MAX;
                 for(size_t k = 0; k < num_points; k++)
                     if(k != i && node->active_rows[k] && node->matrix[k * num_points + j] < min_col)
@@ -254,7 +252,6 @@ static void find_best_zero(Little_Node* node, size_t num_points, int* best_row, 
 
 }
 
-// 2. Blokowanie przedwczesnych cykli (Subtours)
 static void prevent_subtour(Little_Node* node, int u, int v, size_t num_points){
     int start = u;
     int end = v;
@@ -284,7 +281,7 @@ static void prevent_subtour(Little_Node* node, int u, int v, size_t num_points){
     
 }
 
-// 3. Kopiowanie węzła rodzica
+// Tworzenie dzieci
 static Little_Node* create_child_node(Little_Node* parent, size_t num_points){
 
     Little_Node* child = malloc(sizeof(Little_Node));
@@ -313,7 +310,8 @@ void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] d
 
     // Inicjalizacja kopca
     Min_Heap* pq = init_min_heap(num_points * 10);
-    if (!pq) return;
+    if(!pq)
+        return;
 
     // Przygotowanie węzła początkowego
     Little_Node* root = malloc(sizeof(Little_Node));
@@ -325,18 +323,16 @@ void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] d
     root->edges_count = 0;
     root->lower_bound = 0;
 
-    // Kopiujemy oryginalną macierz do korzenia
     memcpy(root->matrix, original_distances, num_points * num_points * sizeof(uint32_t));
     for(size_t i = 0; i < num_points; i++){
 
         root->active_rows[i] = 1;
         root->active_cols[i] = 1;
-        // Zabezpieczenie przed staniem w miejscu
+        
         root->matrix[i * num_points + i] = UINT32_MAX;
 
     }
 
-    // Pierwsza redukcja macierzy dla korzenia
     root->lower_bound += reduce_matrix(root, num_points);
     push_min_heap(pq, root);
 

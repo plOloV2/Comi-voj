@@ -38,8 +38,8 @@ void greeter(){
 int start_choice(){
 
     fprintf(stdout, "\nWould you like to:"
-                    "\n1. " ANSI_COLOR_BLUE     "Run calculations"                  ANSI_RESET_ALL
-                    "\n2. " ANSI_COLOR_GREEN    "Test implemented algorithms(P1)"   ANSI_RESET_ALL
+                    "\n1. " ANSI_COLOR_BLUE     "Run calculations (P1)"                  ANSI_RESET_ALL
+                    "\n2. " ANSI_COLOR_GREEN    "Test implemented algorithms"       ANSI_RESET_ALL
                     "\n3. " ANSI_COLOR_MAGENTA  "Test implemented B&B (P2)"         ANSI_RESET_ALL);
 
     fprintf(stdout, "\nYour choice: ");
