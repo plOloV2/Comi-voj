@@ -198,7 +198,6 @@ void run_bb_experiment(double timeout_seconds) {
         return;
     }
 
-    // Dodano nową kolumnę: Std_Dev_s (Odchylenie standardowe)
     fprintf(file, "N,Algorytm,RNN_Init,Avg_Time_s,Std_Dev_s,Timeout_Percent\n");
     
     // Inicjalizacja generatora RNG
@@ -209,21 +208,17 @@ void run_bb_experiment(double timeout_seconds) {
 
     const char* strategy_names[] = {"DFS", "BFS", "Best-FS"};
 
-    // Pętla po rozmiarach problemu N (12-21)
     for(int n = 7; n <= 25; n++){
         fprintf(stdout, "\n" ANSI_STYLE_BOLD "Rozpoczynanie testow dla N = %d" ANSI_RESET_ALL "\n", n);
 
-        // 1. Generujemy 100 instancji testowych
         uint32_t** test_instances = malloc(100 * sizeof(uint32_t*));
         for(int i = 0; i < 100; i++)
             test_instances[i] = create_random_distances(n, &RNG);
         
-        // 2. Pętla po strategiach (0: DFS, 1: BFS, 2: Best-FS)
         for(int strat = 0; strat < 3; strat++){
-            // 3. Pętla po inicjalizacji górnego ograniczenia (0: Brak/MAX, 1: RNN)
             for(int rnn_init = 0; rnn_init < 2; rnn_init++){
 
-                if(strat == 1 && (rnn_init == 0 || n > 18))
+                if(strat == 1 && (rnn_init == 0 || n > 17))
                     continue;
                 
                 uint8_t mode = (strat << 1) | rnn_init;
@@ -233,12 +228,11 @@ void run_bb_experiment(double timeout_seconds) {
                 // TABLICA NA CZASY DO ODCHYLENIA STANDARDOWEGO
                 double times[100] = {0}; 
 
-                // Wypisanie początkowego stanu (0%)
                 fprintf(stdout, "\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Postep: " ANSI_COLOR_YELLOW "  0%%" ANSI_RESET_ALL, 
                         strategy_names[strat], rnn_init ? "TAK" : "NIE");
                 fflush(stdout);
 
-                // 4. Testujemy 100 tych samych instancji
+                // Testujemy 100 tych samych instancji
                 for(int i = 0; i < 100; i++){
                     Route* res = branch_and_bound(test_instances[i], n, timeout_seconds, mode);
                     
@@ -262,7 +256,6 @@ void run_bb_experiment(double timeout_seconds) {
                     fflush(stdout);
                 }
 
-                // 5. OBLICZENIA STATYSTYCZNE
                 double avg_time = total_time / 100.0;
                 
                 // Wyliczenie wariancji i odchylenia standardowego
@@ -270,21 +263,20 @@ void run_bb_experiment(double timeout_seconds) {
                 for(int i = 0; i < 100; i++)
                     variance += (times[i] - avg_time) * (times[i] - avg_time);
 
-                double std_dev = sqrt(variance / 100.0); // Wariancja populacji
+                double std_dev = sqrt(variance / 100.0);
                 
                 // Po zakończeniu 100 iteracji, nadpisujemy linię ładnym podsumowaniem wyników z Odchyleniem
                 fprintf(stdout, "\r\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | " ANSI_COLOR_GREEN "Gotowe." ANSI_RESET_ALL " (Avg: " ANSI_COLOR_GREEN "%.4lfs" ANSI_RESET_ALL ", StdDev: " ANSI_COLOR_YELLOW "%.4lfs" ANSI_RESET_ALL ", Timeouts: " ANSI_COLOR_RED "%d%%" ANSI_RESET_ALL ")    \n", 
                         strategy_names[strat], rnn_init ? "TAK" : "NIE", avg_time, std_dev, timeouts);
                 
                 // Zapisujemy wszystkie parametry do pliku
-                fprintf(file, "%d,%s,%d,%.6lf,%.6lf,%d\n", n, strategy_names[strat], rnn_init, avg_time, std_dev, timeouts);
+                fprintf(file, "%d,%s,%d,%.9lf,%.9lf,%d\n", n, strategy_names[strat], rnn_init, avg_time, std_dev, timeouts);
                 fflush(file);
 
             }
 
         }
 
-        // 6. Zwalnianie pamięci
         for(int i = 0; i < 100; i++)
             free(test_instances[i]);
 
