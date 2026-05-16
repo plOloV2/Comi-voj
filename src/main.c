@@ -51,6 +51,8 @@ int main(){
 
             int conf = display_test_menu();
 
+            char path[256];
+
 
             switch(conf){
                 case 0:
@@ -59,22 +61,27 @@ int main(){
 
                 case 1:
                     free(dist);
-                    char path[256];
                     get_file_path(path);
                     dist = parse_file(path, &num_points);
                     break;
-                
+
                 case 2:
+                    free(dist);
+                    get_file_path(path);
+                    dist = read_data_from_TSPLIB(path, &num_points, 0);
+                    break;
+                
+                case 3:
                     free(dist);
                     num_points = get_rand_point_num();
                     dist = create_random_distances(num_points, &RNG);
                     break;
                 
-                case 3:
+                case 4:
                     disp_dist(dist, num_points);
                     break;
                 
-                case 4:
+                case 5:
                     int good_to_go = check_data_created(dist, num_points);
                     if(!good_to_go)
                         break;
@@ -93,6 +100,10 @@ int main(){
                     free(result);
                     result = NULL;
 
+                    break;
+
+                default:
+                    print_error("Something unexpected happend. How did we get here?");
                     break;
                 
             }

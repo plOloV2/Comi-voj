@@ -59,14 +59,15 @@ void display_full_ran_info(){
 int display_test_menu(){
 
     fprintf(stdout, "\n"  ANSI_STYLE_BOLD "--- TEST MENU ---" ANSI_RESET_ALL "\n");
-    fprintf(stdout, "1. " ANSI_COLOR_YELLOW     "Load data from a file"                 ANSI_RESET_ALL "\n");
-    fprintf(stdout, "2. " ANSI_COLOR_CYAN       "Generate random data"                  ANSI_RESET_ALL "\n");
-    fprintf(stdout, "3. " ANSI_COLOR_GREEN      "Display last loaded/generated data"    ANSI_RESET_ALL "\n");
-    fprintf(stdout, "4. " ANSI_COLOR_MAGENTA    "Run algorithm on current data"         ANSI_RESET_ALL "\n");
+    fprintf(stdout, "1. " ANSI_COLOR_YELLOW     "Load data from a .txt file"            ANSI_RESET_ALL "\n");
+    fprintf(stdout, "2. " ANSI_COLOR_BLUE       "Load data from a TSPLIB file"          ANSI_RESET_ALL "\n");
+    fprintf(stdout, "3. " ANSI_COLOR_CYAN       "Generate random data"                  ANSI_RESET_ALL "\n");
+    fprintf(stdout, "4. " ANSI_COLOR_GREEN      "Display last loaded/generated data"    ANSI_RESET_ALL "\n");
+    fprintf(stdout, "5. " ANSI_COLOR_MAGENTA    "Run algorithm on current data"         ANSI_RESET_ALL "\n");
     fprintf(stdout, "0. " ANSI_COLOR_RED        "EXIT program"                          ANSI_RESET_ALL "\n");
     fprintf(stdout, "Your choice: ");
 
-    return user_input(0, 4);
+    return user_input(0, 5);
 
 }
 

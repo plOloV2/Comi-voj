@@ -158,3 +158,147 @@ uint32_t*** create_random_distances_for_calc(){
     return dist_table;
 
 }
+
+uint32_t* read_data_from_TSPLIB(char* file_path, size_t* num_points, uint8_t silence_mode){
+
+    FILE* f = fopen(file_path, "r");
+    if(!f){
+        print_error("Failed to open file. Is the path correct?\n");
+        return NULL;
+    }
+
+    printf("\n");
+
+    char line[512];
+    char keyword[64];
+    char value[512];
+    uint32_t* distances = NULL;
+
+    while(1){
+
+        // Read line by line; break at EOF
+        if(!fgets(line, sizeof(line), f))
+            break; 
+        
+
+        // Ignore empty lines
+        if(line[0] == '\n' || line[0] == '\r')
+            continue;
+
+        // Parse the keyword and the rest of the line
+        // %63[^: \t\n] reads up to 63 characters until it hits a colon, space, tab, or newline
+        if(sscanf(line, "%63[^: \t\n]", keyword) != 1){
+            continue; 
+        }
+
+        // Find where the value starts by skipping the keyword, colons, and spaces
+        char* val_ptr = line + strlen(keyword);
+        while(*val_ptr == ':' || *val_ptr == ' ' || *val_ptr == '\t')
+            val_ptr++;
+        
+
+        // Copy the actual value
+        strncpy(value, val_ptr, sizeof(value));
+
+        // Remove trailing newline from the value
+        size_t len = strlen(value);
+        while(len > 0 && (value[len-1] == '\n' || value[len-1] == '\r' || value[len-1] == ' ')){
+            value[len-1] = '\0';
+            len--;
+        }
+        
+
+        // Corrected comparison logic
+        if(strcmp(keyword, "NAME") == 0 && !silence_mode){
+
+            printf("File name being loaded: %s\n", value);
+
+        }else if(strcmp(keyword, "TYPE") == 0){
+
+            if(strcmp(value, "ATSP") != 0 && strcmp(value, "TSP") != 0){
+                print_error("This is not a ATSP or TSP file. This program was not made to handle other TSPLIB file types.\n");
+                *num_points = 0;
+                fclose(f);
+                free(distances);
+                return NULL;
+            }
+
+        }else if(strcmp(keyword, "COMMENT") == 0 && !silence_mode){
+
+            printf("Comment inside file: %s\n", value);
+
+        }else if(strcmp(keyword, "DIMENSION") == 0){
+
+            *num_points = (size_t)atoi(value);
+            distances = aloc_mem(*num_points);
+            if(!distances){
+                print_error("Distances table mem alloc failed.\n");
+                *num_points = 0;
+                fclose(f);
+                return NULL;
+            }
+
+        }else if(strcmp(keyword, "EDGE_WEIGHT_TYPE") == 0){
+
+            if(strcmp(value, "EXPLICIT") != 0){
+                print_error("EDGE_WEIGHT_TYPE is not EXPLICIT. This program was not made to handle other TSPLIB EDGE_WEIGHT_TYPEs.\n");
+                *num_points = 0;
+                fclose(f);
+                free(distances);
+                return NULL;
+            }
+
+        }else if(strcmp(keyword, "EDGE_WEIGHT_FORMAT") == 0){
+
+            if(strcmp(value, "FULL_MATRIX") != 0){
+                print_error("EDGE_WEIGHT_FORMAT is not FULL_MATRIX. This program was not made to handle other TSPLIB EDGE_WEIGHT_FORMATs.\n");
+                *num_points = 0;
+                fclose(f);
+                free(distances);
+                return NULL;
+            }
+
+        }else if(strcmp(keyword, "EDGE_WEIGHT_SECTION") == 0){
+
+            if(*num_points == 0){
+                print_error("Trying to read EDGE_WEIGHT_SECTION with num_points set to 0.\n");
+                fclose(f);
+                free(distances);
+                return NULL;
+            }
+
+            if(!distances){
+                print_error("Trying to read EDGE_WEIGHT_SECTION with distances[] being NULL.\n");
+                *num_points = 0;
+                fclose(f);
+                return NULL;
+            }
+
+            for(size_t i = 0; i < *num_points; i++){
+                for(size_t j = 0; j < *num_points; j++){
+                    if(fscanf(f, "%u", &distances[i * *num_points + j]) != 1){
+                        print_error("Failed to read distance matrix from file.\n");
+                        free(distances);
+                        fclose(f);
+                        *num_points = 0;
+                        return NULL;
+                    }
+                    
+                    if(i == j)
+                        distances[i * *num_points + j] = UINT32_MAX;
+
+                }
+
+            }
+            
+            break;
+
+        }
+
+    }
+
+    fclose(f);
+
+    return distances;
+
+}
