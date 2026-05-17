@@ -163,11 +163,13 @@ uint32_t* read_data_from_TSPLIB(char* file_path, size_t* num_points, uint8_t sil
 
     FILE* f = fopen(file_path, "r");
     if(!f){
-        print_error("Failed to open file. Is the path correct?\n");
+        print_error("Failed to open file. Is the path correct?");
+        printf("Path provided: %s\n", file_path);
         return NULL;
     }
 
-    printf("\n");
+    if(!silence_mode)
+        printf("\n");
 
     char line[512];
     char keyword[64];
@@ -176,39 +178,28 @@ uint32_t* read_data_from_TSPLIB(char* file_path, size_t* num_points, uint8_t sil
 
     while(1){
 
-        // Read line by line; break at EOF
         if(!fgets(line, sizeof(line), f))
             break; 
-        
 
-        // Ignore empty lines
         if(line[0] == '\n' || line[0] == '\r')
             continue;
 
-        // Parse the keyword and the rest of the line
         // %63[^: \t\n] reads up to 63 characters until it hits a colon, space, tab, or newline
-        if(sscanf(line, "%63[^: \t\n]", keyword) != 1){
+        if(sscanf(line, "%63[^: \t\n]", keyword) != 1)
             continue; 
-        }
-
-        // Find where the value starts by skipping the keyword, colons, and spaces
+        
         char* val_ptr = line + strlen(keyword);
         while(*val_ptr == ':' || *val_ptr == ' ' || *val_ptr == '\t')
             val_ptr++;
         
-
-        // Copy the actual value
         strncpy(value, val_ptr, sizeof(value));
 
-        // Remove trailing newline from the value
         size_t len = strlen(value);
         while(len > 0 && (value[len-1] == '\n' || value[len-1] == '\r' || value[len-1] == ' ')){
             value[len-1] = '\0';
             len--;
         }
         
-
-        // Corrected comparison logic
         if(strcmp(keyword, "NAME") == 0 && !silence_mode){
 
             printf("File name being loaded: %s\n", value);

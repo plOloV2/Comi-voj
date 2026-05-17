@@ -189,18 +189,20 @@ Route**** run_whole_calculation(uint32_t*** data_table){
 
 }
 
+
+
 uint32_t* create_random_distances(size_t num_points, xoshiro256_state* xos_state);
 
-void run_bb_experiment(double timeout_seconds) {
+void run_bb_experiment(double timeout_seconds){
+
     FILE* file = fopen("bb_results_comparison.csv", "w");
     if(!file){
-        print_error("Nie mozna otworzyc bb_results_comparison.csv do zapisu.\n");
+        print_error("bb_results_comparison.csv file coundn't be open.\n");
         return;
     }
 
     fprintf(file, "N,Algorytm,RNN_Init,Avg_Time_s,Std_Dev_s,Timeout_Percent\n");
     
-    // Inicjalizacja generatora RNG
     uint64_t seed;
     create_rand_seed(&seed);
     xoshiro256_state RNG;
@@ -209,7 +211,7 @@ void run_bb_experiment(double timeout_seconds) {
     const char* strategy_names[] = {"DFS", "BFS", "Best-FS"};
 
     for(int n = 7; n <= 25; n++){
-        fprintf(stdout, "\n" ANSI_STYLE_BOLD "Rozpoczynanie testow dla N = %d" ANSI_RESET_ALL "\n", n);
+        fprintf(stdout, "\n" ANSI_STYLE_BOLD "Starting tests for N = %d" ANSI_RESET_ALL "\n", n);
 
         uint32_t** test_instances = malloc(100 * sizeof(uint32_t*));
         for(int i = 0; i < 100; i++)
@@ -225,19 +227,17 @@ void run_bb_experiment(double timeout_seconds) {
                 double total_time = 0.0;
                 int timeouts = 0;
                 
-                // TABLICA NA CZASY DO ODCHYLENIA STANDARDOWEGO
                 double times[100] = {0}; 
 
-                fprintf(stdout, "\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Postep: " ANSI_COLOR_YELLOW "  0%%" ANSI_RESET_ALL, 
-                        strategy_names[strat], rnn_init ? "TAK" : "NIE");
+                fprintf(stdout, "\tAlgorithm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Progress: " ANSI_COLOR_YELLOW "  0%%" ANSI_RESET_ALL, 
+                        strategy_names[strat], rnn_init ? "Yes" : "No");
                 fflush(stdout);
 
-                // Testujemy 100 tych samych instancji
                 for(int i = 0; i < 100; i++){
                     Route* res = branch_and_bound(test_instances[i], n, timeout_seconds, mode);
                     
                     if(res){
-                        times[i] = res->time; // Zapisujemy czas pojedynczej instancji
+                        times[i] = res->time;
                         total_time += res->time;
                         
                         if(res->time >= timeout_seconds - 0.001)
@@ -247,29 +247,26 @@ void run_bb_experiment(double timeout_seconds) {
                         free(res);
 
                     }else {
-                        times[i] = 0.0; // W razie błędu alokacji
+                        times[i] = 0.0;
                     }
 
-                    // Aktualizacja paska postępu w tej samej linijce (\r)
-                    fprintf(stdout, "\r\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Postep: " ANSI_COLOR_YELLOW "%3d%%" ANSI_RESET_ALL, 
-                            strategy_names[strat], rnn_init ? "TAK" : "NIE", i + 1);
+                    fprintf(stdout, "\r\tAlgorithm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | Progress: " ANSI_COLOR_YELLOW "%3d%%" ANSI_RESET_ALL, 
+                            strategy_names[strat], rnn_init ? "Yes" : "No", i + 1);
                     fflush(stdout);
+
                 }
 
                 double avg_time = total_time / 100.0;
                 
-                // Wyliczenie wariancji i odchylenia standardowego
                 double variance = 0.0;
                 for(int i = 0; i < 100; i++)
                     variance += (times[i] - avg_time) * (times[i] - avg_time);
 
                 double std_dev = sqrt(variance / 100.0);
                 
-                // Po zakończeniu 100 iteracji, nadpisujemy linię ładnym podsumowaniem wyników z Odchyleniem
-                fprintf(stdout, "\r\tAlgorytm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | " ANSI_COLOR_GREEN "Gotowe." ANSI_RESET_ALL " (Avg: " ANSI_COLOR_GREEN "%.4lfs" ANSI_RESET_ALL ", StdDev: " ANSI_COLOR_YELLOW "%.4lfs" ANSI_RESET_ALL ", Timeouts: " ANSI_COLOR_RED "%d%%" ANSI_RESET_ALL ")    \n", 
-                        strategy_names[strat], rnn_init ? "TAK" : "NIE", avg_time, std_dev, timeouts);
+                fprintf(stdout, "\r\tAlgorithm: " ANSI_COLOR_CYAN "%-7s" ANSI_RESET_ALL " | RNN: " ANSI_COLOR_MAGENTA "%-3s" ANSI_RESET_ALL " | " ANSI_COLOR_GREEN "Done." ANSI_RESET_ALL " (Avg: " ANSI_COLOR_GREEN "%.4lfs" ANSI_RESET_ALL ", StdDev: " ANSI_COLOR_YELLOW "%.4lfs" ANSI_RESET_ALL ", Timeouts: " ANSI_COLOR_RED "%d%%" ANSI_RESET_ALL ")    \n", 
+                        strategy_names[strat], rnn_init ? "Yes" : "No", avg_time, std_dev, timeouts);
                 
-                // Zapisujemy wszystkie parametry do pliku
                 fprintf(file, "%d,%s,%d,%.9lf,%.9lf,%d\n", n, strategy_names[strat], rnn_init, avg_time, std_dev, timeouts);
                 fflush(file);
 
@@ -285,6 +282,124 @@ void run_bb_experiment(double timeout_seconds) {
     }
 
     fclose(file);
-    fprintf(stdout, "\nEksperyment zakonczony. Wyniki zapisano w " ANSI_STYLE_BOLD "bb_results_comparison.csv" ANSI_RESET_ALL ".\n");
+    fprintf(stdout, "\nCalculations done. Results saved in " ANSI_STYLE_BOLD "bb_results_comparison.csv" ANSI_RESET_ALL ".\n");
     
+}
+
+
+
+void get_file_path(char* path);
+uint32_t* read_data_from_TSPLIB(char* file_path, size_t* num_points, uint8_t silence_mode);
+
+void clear_string(char* input){
+
+    size_t in_size = strlen(input);
+    size_t len = in_size;
+
+    while(len > 0 && (input[len-1] == '\n' || input[len-1] == '\r' || input[len-1] == ' '))
+        input[--len] = '\0';
+
+    if(len == 0)
+        return;
+
+    len = 0;
+    while(len < in_size && (input[len] == '\t' || input[len] == ' '))
+        len++;
+
+    memmove(input, input + len, in_size - len + 1);
+
+}
+
+void find_base_path(char* file_path, char* base_path){
+
+    size_t in_size = strlen(file_path);
+    size_t len = in_size;
+
+    while(len > 0 && file_path[len - 1] != '/')
+        len--;
+
+    if(len == 0){
+        base_path[0] = '\0';
+        return;
+    }
+
+    strncpy(base_path, file_path, len);
+    base_path[len] = '\0';
+
+}
+
+void run_TB_experiment(){
+
+    char results_file_path[256];
+
+    get_file_path(results_file_path);
+
+    FILE* f = fopen(results_file_path, "r");
+    if(!f){
+        print_error("Failed to open TSPLIB results file. Is the path correct?\n");
+        return;
+    }
+
+    printf("\n");
+
+    char line[64];
+    char TSP_file[32];
+    char value[32];
+
+    fgets(line, sizeof(line), f);
+    clear_string(line);
+    if(strcmp(line, "Best solution of ATSP") != 0){
+        print_error("Headline missmatch. Is it the right file?\n");
+        fclose(f);
+        return;
+    }
+
+    char base_path[256];
+    find_base_path(results_file_path, base_path);
+    size_t base_path_lenght = strlen(base_path);
+
+    double max_time = 0;
+
+    printf("\n");
+
+
+
+    while(1){
+
+        if(!fgets(line, sizeof(line), f))
+            break; 
+
+        if(line[0] == '\n' || line[0] == '\r')
+            continue;
+
+        clear_string(line);
+
+        if(sscanf(line, "%31[^: \t\n]", TSP_file) != 1)
+            continue;
+
+        size_t TSP_file_lenght = strlen(TSP_file);
+        char* val_ptr = line + TSP_file_lenght;
+        while(*val_ptr == ':' || *val_ptr == ' ' || *val_ptr == '\t')
+            val_ptr++;
+        
+        strncpy(value, val_ptr, sizeof(value));
+
+        uint32_t best_solution = atoi(value);
+
+        char ATSP_path[256];
+        strncpy(ATSP_path, base_path, sizeof(ATSP_path));
+        strncpy(ATSP_path + base_path_lenght, TSP_file, sizeof(ATSP_path) - base_path_lenght);
+        strncpy(ATSP_path + base_path_lenght + TSP_file_lenght, ".atsp", sizeof(ATSP_path) - base_path_lenght - TSP_file_lenght);
+
+        size_t num_points = 0;
+        uint32_t* distances = read_data_from_TSPLIB(ATSP_path, &num_points, 1);
+
+
+
+        free(distances);
+
+    }
+
+    return;
+
 }

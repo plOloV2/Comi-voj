@@ -7,6 +7,7 @@ Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, u
 Route**** run_whole_calculation(uint32_t*** data_table);
 int save_results_to_csv(Route**** results);
 void run_bb_experiment(double timeout_seconds);
+void run_TB_experiment();
 
 int main(){
 
@@ -115,6 +116,10 @@ int main(){
     }else if(decision == 3){
 
         run_bb_experiment(240.0);
+
+    } else if(decision == 4){
+
+        run_TB_experiment();
 
     }
 
