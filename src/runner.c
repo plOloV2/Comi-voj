@@ -359,6 +359,11 @@ void run_TB_experiment(){
     size_t base_path_lenght = strlen(base_path);
 
     double max_time = 0;
+    
+    uint64_t seed;
+    create_rand_seed(&seed);
+    xoshiro256_state RNG;
+    xoshiro_init(&RNG, seed);
 
     printf("\n");
 

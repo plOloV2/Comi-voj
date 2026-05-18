@@ -26,7 +26,11 @@ Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Rout
             return NULL;
         }
 
-        if(!repitive || temp->distance_u < repitive->distance_u){
+        if(!repitive){
+            repitive = temp;
+        }else if(temp->distance_u < repitive->distance_u){
+            free(repitive->city_order);
+            free(repitive);
             repitive = temp;
         }else {
             free(temp->city_order);

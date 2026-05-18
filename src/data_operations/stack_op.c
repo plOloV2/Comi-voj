@@ -21,7 +21,7 @@ Path_stack* init_stack(size_t num_points){
         return NULL;
     }
 
-    Stack->stack[0].city_order = malloc(num_points * sizeof(uint8_t));
+    Stack->stack[0].city_order = malloc(num_points * sizeof(uint16_t));
     if(!Stack->stack[0].city_order){
         print_error("Failed to alloc Stack->stack[0].city_order array.\n");
         free(Stack->stack);
@@ -29,7 +29,7 @@ Path_stack* init_stack(size_t num_points){
         return NULL;
     }
 
-    Stack->stack[0].visited = calloc(num_points, sizeof(uint8_t));
+    Stack->stack[0].visited = calloc(num_points, sizeof(uint16_t));
     if(!Stack->stack[0].visited){
         print_error("Failed to alloc Stack->stack[0].visited array.\n");
         free(Stack->stack[0].city_order);

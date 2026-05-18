@@ -10,14 +10,14 @@ Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_
         return NULL;
     }
 
-    naive->city_order = malloc(num_points * sizeof(uint8_t));
+    naive->city_order = malloc(num_points * sizeof(uint16_t));
     if(!naive->city_order){
         print_error("city_order table alloc failed in fast NN algorithm, exiting...\n");
         free(naive);
         return NULL;
     }
     
-    uint8_t* visited = calloc(num_points, sizeof(uint8_t));
+    uint16_t* visited = calloc(num_points, sizeof(uint16_t));
     if(!visited){
         print_error("visited table alloc failed in fast NN algorithm, exiting...\n");
         free(naive->city_order);

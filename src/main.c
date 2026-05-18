@@ -34,6 +34,48 @@ int main(){
             fprintf(stdout, "All was saved safely.\n");
         }
 
+        for(int i = 0; i < 6; i++){
+
+            if(calc_results[i]){
+
+                for(int j = 0; j < 7; j++){
+
+                    if(calc_results[i][j]){
+
+                        for(int k = 0; k < 100; k++){
+
+                            if(calc_results[i][j][k]){
+                                free(calc_results[i][j][k]->city_order);
+                                free(calc_results[i][j][k]);
+                            }
+
+                        }
+
+                        free(calc_results[i][j]);
+                    }
+
+                }
+
+                free(calc_results[i]);
+            }
+
+        }
+
+        free(calc_results);
+
+        for(int i = 0; i < 7; i++){
+            if(data_table[i]){
+                for(int j = 0; j < 100; j++)
+                    free(data_table[i][j]);
+                
+                free(data_table[i]);
+
+            }
+
+        }
+        
+        free(data_table);
+
     }else if(decision == 2){
 
         int run = 1;

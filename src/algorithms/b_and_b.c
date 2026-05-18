@@ -37,7 +37,7 @@ static uint32_t* precompute_min_outgoing(uint32_t* distances, size_t num_points)
 
 }
 
-static uint64_t calculate_lower_bound(uint32_t* min_outgoing, size_t num_points, uint8_t* visited, int current_city){
+static uint64_t calculate_lower_bound(uint32_t* min_outgoing, size_t num_points, uint16_t* visited, int current_city){
     uint64_t lower_bound = 0;
 
     if(min_outgoing[current_city] != UINT32_MAX)
@@ -91,7 +91,7 @@ static void bb_dfs(uint32_t* distances, size_t num_points, [[maybe_unused]] doub
                 
                 if(total_cost < best_route->distance_u){
                     best_route->distance_u = total_cost;
-                    memcpy(best_route->city_order, current.city_order, num_points * sizeof(uint8_t));
+                    memcpy(best_route->city_order, current.city_order, num_points * sizeof(uint16_t));
                 }
 
             }
@@ -133,11 +133,11 @@ static void bb_dfs(uint32_t* distances, size_t num_points, [[maybe_unused]] doub
 
                         // PUSH na stos
                         stack->stack_top++;
-                        stack->stack[stack->stack_top].visited = malloc(num_points * sizeof(uint8_t));
-                        stack->stack[stack->stack_top].city_order = malloc(num_points * sizeof(uint8_t));
+                        stack->stack[stack->stack_top].visited = malloc(num_points * sizeof(uint16_t));
+                        stack->stack[stack->stack_top].city_order = malloc(num_points * sizeof(uint16_t));
 
-                        memcpy(stack->stack[stack->stack_top].visited, current.visited, num_points);
-                        memcpy(stack->stack[stack->stack_top].city_order, current.city_order, num_points);
+                        memcpy(stack->stack[stack->stack_top].visited, current.visited, num_points * sizeof(uint16_t));
+                        memcpy(stack->stack[stack->stack_top].city_order, current.city_order, num_points * sizeof(uint16_t));
 
                         stack->stack[stack->stack_top].visited[i] = 1;
                         stack->stack[stack->stack_top].city_order[current.depth] = i;
@@ -176,14 +176,14 @@ static void bb_bfs(uint32_t* distances, size_t num_points, [[maybe_unused]] doub
     size_t tail = 0; // Gdzie wstawiamy (PUSH)
 
     // Inicjalizacja stanu początkowego
-    queue[tail].visited = calloc(num_points, sizeof(uint8_t));
+    queue[tail].visited = calloc(num_points, sizeof(uint16_t));
     if(!queue[tail].visited){
         print_error("Queue[tail].visited alloc failed in B&B BFS.\n");
         free(queue);
         return;
     }
 
-    queue[tail].city_order = calloc(num_points, sizeof(uint8_t));
+    queue[tail].city_order = calloc(num_points, sizeof(uint16_t));
     if(!queue[tail].city_order){
         print_error("Queue[tail].city_order alloc failed in B&B BFS.\n");
         free(queue[tail].visited);
@@ -222,7 +222,7 @@ static void bb_bfs(uint32_t* distances, size_t num_points, [[maybe_unused]] doub
                 
                 if(total_cost < best_route->distance_u){
                     best_route->distance_u = total_cost;
-                    memcpy(best_route->city_order, current.city_order, num_points * sizeof(uint8_t));
+                    memcpy(best_route->city_order, current.city_order, num_points * sizeof(uint16_t));
                 }
 
             }
@@ -277,20 +277,20 @@ static void bb_bfs(uint32_t* distances, size_t num_points, [[maybe_unused]] doub
                         }
 
                         // WSTAWIANIE do kolejki
-                        queue[tail].visited = malloc(num_points * sizeof(uint8_t));
+                        queue[tail].visited = malloc(num_points * sizeof(uint16_t));
                         if(!queue[tail].visited){
                             print_error("Queue[tail].visited alloc has failed in B&B BFS.\n");
                             goto CLEANUP_BFS;
                         }
-                        queue[tail].city_order = malloc(num_points * sizeof(uint8_t));
+                        queue[tail].city_order = malloc(num_points * sizeof(uint16_t));
                         if(!queue[tail].city_order){
                             print_error("Queue[tail].city_order alloc has failed in B&B BFS.\n");
                             free(queue[tail].visited);
                             goto CLEANUP_BFS;
                         }
 
-                        memcpy(queue[tail].visited, current.visited, num_points);
-                        memcpy(queue[tail].city_order, current.city_order, num_points);
+                        memcpy(queue[tail].visited, current.visited, num_points * sizeof(uint16_t));
+                        memcpy(queue[tail].city_order, current.city_order, num_points * sizeof(uint16_t));
 
                         queue[tail].visited[i] = 1;
                         queue[tail].city_order[current.depth] = i;
@@ -346,7 +346,7 @@ Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_s
         return NULL;
     }
 
-    best_route->city_order = malloc(num_points * sizeof(uint8_t));
+    best_route->city_order = malloc(num_points * sizeof(uint16_t));
     if(!best_route->city_order){
         print_error("Best_route->city_order alloc failed in B&B algorithm.\n");
         free(best_route);
@@ -361,7 +361,7 @@ Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_s
         
         if(initial_solution){
             best_route->distance_u = initial_solution->distance_u;
-            memcpy(best_route->city_order, initial_solution->city_order, num_points * sizeof(uint8_t));
+            memcpy(best_route->city_order, initial_solution->city_order, num_points * sizeof(uint16_t));
             
             free(initial_solution->city_order);
             free(initial_solution);

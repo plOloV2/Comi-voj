@@ -7,14 +7,14 @@ typedef union{
     uint16_t    d[4];
 } rand_convert;
 
-static inline void swap_numbers(uint8_t* a, uint8_t* b){
-    uint8_t temp = *a;
+static inline void swap_numbers(uint16_t* a, uint16_t* b){
+    uint16_t temp = *a;
     *a = *b;
     *b = temp;
 }
 
 // Fisher–Yates shuffle
-static void create_rand_sequence(uint8_t* table, size_t num_points, xoshiro256_state* xos_state){
+static void create_rand_sequence(uint16_t* table, size_t num_points, xoshiro256_state* xos_state){
 
     rand_convert new_pull;
     new_pull.a = xoshiro_next(xos_state);
@@ -55,7 +55,7 @@ Route* rand_seq(uint32_t* distances, size_t num_points, int perms){
         return NULL;
     }
     
-    result->city_order = malloc(num_points * sizeof(uint8_t));
+    result->city_order = malloc(num_points * sizeof(uint16_t));
     if(!result->city_order){
         print_error("Result->city_order alloc failed, exiting...\n");
         free(result);
@@ -70,7 +70,7 @@ Route* rand_seq(uint32_t* distances, size_t num_points, int perms){
         return NULL;
     }
 
-    rand_route->city_order = malloc(num_points * sizeof(uint8_t));
+    rand_route->city_order = malloc(num_points * sizeof(uint16_t));
     if(!rand_route->city_order){
         print_error("rand_route->city_order alloc failed, exiting...\n");
         free(result->city_order);
@@ -99,7 +99,7 @@ Route* rand_seq(uint32_t* distances, size_t num_points, int perms){
         if(rand_route->distance_u < result->distance_u){
 
             result->distance_u = rand_route->distance_u;
-            memcpy(result->city_order, rand_route->city_order, num_points * sizeof(uint8_t));
+            memcpy(result->city_order, rand_route->city_order, num_points * sizeof(uint16_t));
 
         }
 

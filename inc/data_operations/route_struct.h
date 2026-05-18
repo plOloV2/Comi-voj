@@ -6,7 +6,7 @@
 typedef struct{
     double      time;
     uint64_t    distance_u;
-    uint8_t*    city_order;
+    uint16_t*   city_order;
 }Route;
 
 #endif

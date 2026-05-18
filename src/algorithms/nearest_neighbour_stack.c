@@ -11,7 +11,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
         return NULL;
     }
 
-    naive->city_order = malloc(num_points * sizeof(uint8_t));
+    naive->city_order = malloc(num_points * sizeof(uint16_t));
     if(!naive->city_order){
         print_error("Route->city_order alloc failed in stack NN.\n");
         free(naive);
@@ -29,7 +29,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
     }
 
     Stack->stack[0].distance_u = 0;
-    Stack->stack[0].city_order[0] = (uint8_t)start_point_id;
+    Stack->stack[0].city_order[0] = (uint16_t)start_point_id;
     Stack->stack[0].visited[start_point_id] = 1;
     Stack->stack[0].current_city = start_point_id;
     Stack->stack[0].depth = 1;
@@ -50,7 +50,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
 
             if(total_dist < naive->distance_u){
                 naive->distance_u = total_dist;
-                memcpy(naive->city_order, current.city_order, num_points * sizeof(uint8_t));
+                memcpy(naive->city_order, current.city_order, num_points * sizeof(uint16_t));
             }
 
             free(current.city_order);
@@ -84,7 +84,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
         }
 
         int num_found = 0;
-        uint8_t min_found[num_points];
+        uint16_t min_found[num_points];
 
         for(size_t i = 0; i < num_points; i++){
             if(current.visited[i] || distances[current.current_city * num_points + i] != min)
@@ -143,7 +143,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
 
                 }else {
 
-                    Stack->stack[Stack->stack_top].visited = malloc(num_points * sizeof(uint8_t));
+                    Stack->stack[Stack->stack_top].visited = malloc(num_points * sizeof(uint16_t));
                     if(!Stack->stack[Stack->stack_top].visited){
                         print_error("Failed to alloc Stack->stack[Stack->stack_top].visited array in stack NN.\n");
                         Stack->stack_top--;
@@ -155,7 +155,7 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
                         return NULL;
                     }
 
-                    Stack->stack[Stack->stack_top].city_order = malloc(num_points * sizeof(uint8_t));
+                    Stack->stack[Stack->stack_top].city_order = malloc(num_points * sizeof(uint16_t));
                     if(!Stack->stack[Stack->stack_top].city_order){
                         print_error("Failed to alloc Stack->stack[Stack->stack_top].city_order array in stack NN.\n");
                         free(current.city_order);
@@ -169,8 +169,8 @@ Route* nearest_neighbour_stack(uint32_t* distances, size_t num_points, int start
                         return NULL;
                     }
 
-                    memcpy(Stack->stack[Stack->stack_top].visited, current.visited, num_points);
-                    memcpy(Stack->stack[Stack->stack_top].city_order, current.city_order, num_points);
+                    memcpy(Stack->stack[Stack->stack_top].visited, current.visited, num_points * sizeof(uint16_t));
+                    memcpy(Stack->stack[Stack->stack_top].city_order, current.city_order, num_points * sizeof(uint16_t));
 
                 }
 

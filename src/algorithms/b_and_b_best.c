@@ -381,7 +381,7 @@ void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] d
 
             }
 
-            uint8_t* temp_order = calloc(num_points, sizeof(uint8_t));
+            uint16_t* temp_order = calloc(num_points, sizeof(uint16_t));
             int start_node = 0;
             temp_order[0] = 0;
             
@@ -390,7 +390,7 @@ void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] d
                     if(current->path_from[e] == start_node){
 
                         start_node = current->path_to[e];
-                        temp_order[step] = (uint8_t)start_node;
+                        temp_order[step] = (uint16_t)start_node;
                         break;
 
                     }
@@ -400,7 +400,7 @@ void bb_best(uint32_t* original_distances, size_t num_points, [[maybe_unused]] d
             }
 
             best_route->distance_u = current->lower_bound;
-            memcpy(best_route->city_order, temp_order, num_points * sizeof(uint8_t));
+            memcpy(best_route->city_order, temp_order, num_points * sizeof(uint16_t));
 
             free(temp_order);
             free(current->matrix);

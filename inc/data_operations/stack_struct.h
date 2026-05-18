@@ -5,8 +5,8 @@
 
 typedef struct{
     uint64_t    distance_u;
-    uint8_t*    city_order;
-    uint8_t*    visited;
+    uint16_t*    city_order;
+    uint16_t*    visited;
     size_t      depth;
     int         current_city;
 } Path_state;
