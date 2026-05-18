@@ -10,6 +10,49 @@ typedef union{
     uint8_t  b8[8];
 } type_conv;
 
+typedef struct tabu tabu;
+
+struct tabu{
+    size_t      cycles_blocked;
+    uint16_t*   order;
+    tabu*       next;
+};
+
+static void add_tabu(tabu* list, uint16_t* state, xoshiro256_state* xos){
+
+
+
+}
+
+static void decrease_cycles_tabu(tabu* list){
+
+    tabu* next = list;
+
+    while(next){
+
+        if(next->cycles_blocked-- == 1){
+
+            free(next->order);
+            list->next = next->next;
+
+        }
+
+        list = next;
+        next = list->next;
+        
+    }
+
+}
+
+static void free_tabu(tabu* list){
+
+    if(!list)
+        return;
+
+    
+
+}
+
 static inline void swap_numbers(uint16_t* a, uint16_t* b){
     uint16_t temp = *a;
     *a = *b;
@@ -117,6 +160,7 @@ Route* tabu_search(uint32_t* distances, size_t num_points, double max_time, xosh
     best_route->distance_u = start->distance_u;
     memcpy(best_route->city_order, start->city_order, (num_points * sizeof(uint16_t)));
     size_t since_last_up = 0;
+    tabu* tabu_list = NULL;
     best_route->time = omp_get_wtime();
     
 
