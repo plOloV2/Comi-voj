@@ -165,13 +165,6 @@ Route* tabu_search( uint32_t* distances, size_t num_points, size_t max_iter, xos
             create_rand_sequence(current_route->city_order, num_points, xos_state);
             calculate_road_dist(distances, num_points, current_route->city_order);
 
-            if(current_route->distance_u < best_route->distance_u){
-
-                best_route->distance_u = current_route->distance_u;
-                memcpy(best_route->city_order, current_route->city_order, (num_points * sizeof(uint16_t)));
-
-            }
-
             for(size_t i = 0; i < num_points; i++)
                 memset(tabu_matrix[i], 0, num_points * sizeof(size_t));
                 
@@ -184,6 +177,15 @@ Route* tabu_search( uint32_t* distances, size_t num_points, size_t max_iter, xos
                 
 
             }
+
+        }
+
+        if(current_route->distance_u < best_route->distance_u){
+
+            best_route->distance_u = current_route->distance_u;
+            memcpy(best_route->city_order, current_route->city_order, (num_points * sizeof(uint16_t)));
+
+            since_last_up = 0;
 
         }
 
