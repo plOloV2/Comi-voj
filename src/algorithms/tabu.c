@@ -1,8 +1,8 @@
 #include "libs.h"
 #include "UI/TUI_func.h"
 
-Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Route* (*NN_func)(uint32_t* distances, size_t num_points, int start_point_id));
-Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int start_point_id);
+Route* repetitive_nearest_neighbour(uint32_t* distances, size_t num_points, Route* (*NN_func)(uint32_t* distances, size_t num_points, int current_route_point_id));
+Route* nearest_neighbour_fast(uint32_t* distances, size_t num_points, int current_route_point_id);
 
 typedef union{
     uint64_t b64;
@@ -10,46 +10,30 @@ typedef union{
     uint8_t  b8[8];
 } type_conv;
 
-typedef struct tabu tabu;
+static size_t** alloc_tabu_matrix(size_t size){
 
-struct tabu{
-    size_t      cycles_blocked;
-    uint16_t*   order;
-    tabu*       next;
-};
+    size_t** matrix = malloc(size * sizeof(size_t*));
+    if(!matrix){
+        print_error("Tabu matrix** alloc failed.\n");
+        return NULL;
+    }
 
-static void add_tabu(tabu* list, uint16_t* state, xoshiro256_state* xos){
+    for(size_t i = 0; i < size; i++){
 
+        matrix[i] = calloc(size, sizeof(size_t));
+        if(!matrix[i]){
+            print_error("Tabu matrix* alloc failed.\n");
+            for(size_t j = 0; j < i; j++)
+                free(matrix[i]);
 
-
-}
-
-static void decrease_cycles_tabu(tabu* list){
-
-    tabu* next = list;
-
-    while(next){
-
-        if(next->cycles_blocked-- == 1){
-
-            free(next->order);
-            list->next = next->next;
+            free(matrix);
+            return NULL;
 
         }
 
-        list = next;
-        next = list->next;
-        
     }
 
-}
-
-static void free_tabu(tabu* list){
-
-    if(!list)
-        return;
-
-    
+    return matrix;
 
 }
 
@@ -62,13 +46,9 @@ static inline void swap_numbers(uint16_t* a, uint16_t* b){
 // Fisher–Yates shuffle
 static void create_rand_sequence(uint16_t* table, size_t num_points, xoshiro256_state* xos_state){
 
+    size_t byte_idx = 4;
     type_conv new_pull;
     new_pull.b64 = xoshiro_next(xos_state);
-
-    for(size_t i = 0; i < num_points; i++)
-        table[i] = i;
-
-    size_t byte_idx = 4;
 
     for(size_t i = num_points - 1; i > 0; i--){
         
@@ -99,7 +79,8 @@ static uint64_t calculate_road_dist(uint32_t* distances, size_t num_points, uint
 }
 
 
-Route* tabu_search(uint32_t* distances, size_t num_points, double max_time, xoshiro256_state* xos_state, size_t max_no_up, uint8_t use_RNN){
+Route* tabu_search( uint32_t* distances, size_t num_points, size_t max_iter, xoshiro256_state* xos_state, size_t sample_size,
+                    size_t max_no_up, uint8_t use_RNN, size_t min_iter_stop, size_t max_iter_stop){
 
     if(num_points <= 3){
         print_error("Graph size is less or eqal to 3. You can find the best route by yourself.\n");
@@ -119,12 +100,12 @@ Route* tabu_search(uint32_t* distances, size_t num_points, double max_time, xosh
         return NULL;
     }
 
-    Route* start = NULL;
+    Route* current_route = NULL;
     if(use_RNN){
 
-        start = repetitive_nearest_neighbour(distances, num_points, nearest_neighbour_fast);
+        current_route = repetitive_nearest_neighbour(distances, num_points, nearest_neighbour_fast);
 
-        if(!start){
+        if(!current_route){
             print_error("RNN failed in TS algorithm.");
             free(best_route->city_order);
             free(best_route);
@@ -133,45 +114,76 @@ Route* tabu_search(uint32_t* distances, size_t num_points, double max_time, xosh
 
     }else {
 
-        start = malloc(sizeof(Route));
+        current_route = malloc(sizeof(Route));
 
-        if(!start){
-            print_error("Route* start alloc failed in TS algorithm.");
+        if(!current_route){
+            print_error("Route* current_route alloc failed in TS algorithm.");
             free(best_route->city_order);
             free(best_route);
             return NULL;
         }
 
-        start->city_order = malloc(num_points * sizeof(uint16_t));
-        if(!start->city_order){
-            print_error("start->city_order malloc failed in TS algorithm.");
+        current_route->city_order = malloc(num_points * sizeof(uint16_t));
+        if(!current_route->city_order){
+            print_error("current_route->city_order malloc failed in TS algorithm.");
             free(best_route->city_order);
             free(best_route);
-            free(start);
+            free(current_route);
             return NULL;
         }
 
-        create_rand_sequence(start->city_order, num_points, xos_state);
-        start->distance_u = calculate_road_dist(distances, num_points, start->city_order);
+
+        for(size_t i = 0; i < num_points; i++)
+            current_route->city_order[i] = i;
+        create_rand_sequence(current_route->city_order, num_points, xos_state);
+        current_route->distance_u = calculate_road_dist(distances, num_points, current_route->city_order);
 
     }
     
 
-    best_route->distance_u = start->distance_u;
-    memcpy(best_route->city_order, start->city_order, (num_points * sizeof(uint16_t)));
+    size_t** tabu_matrix = alloc_tabu_matrix(num_points);
+    if(!tabu_matrix){
+        print_error("Tabu matrix alloc failed.");
+        free(best_route->city_order);
+        free(best_route);
+        free(current_route->city_order);
+        free(current_route);
+        return NULL;
+    }
+
+    best_route->distance_u = current_route->distance_u;
+    memcpy(best_route->city_order, current_route->city_order, (num_points * sizeof(uint16_t)));
     size_t since_last_up = 0;
-    tabu* tabu_list = NULL;
+    size_t current_iter = 1;
     best_route->time = omp_get_wtime();
     
 
-    while(1){
-
-        if((omp_get_wtime() - best_route->time) >= max_time)
-            break;
+    while(current_iter++ <= max_iter){
 
         if(since_last_up++ > max_no_up){
 
+            create_rand_sequence(current_route->city_order, num_points, xos_state);
+            calculate_road_dist(distances, num_points, current_route->city_order);
+
+            if(current_route->distance_u < best_route->distance_u){
+
+                best_route->distance_u = current_route->distance_u;
+                memcpy(best_route->city_order, current_route->city_order, (num_points * sizeof(uint16_t)));
+
+            }
+
+            for(size_t i = 0; i < num_points; i++)
+                memset(tabu_matrix[i], 0, num_points * sizeof(size_t));
+                
+            since_last_up = 0;
+
         } else{
+
+            for(size_t i = 0; i < sample_size; i++){
+
+                
+
+            }
 
         }
 
@@ -179,6 +191,14 @@ Route* tabu_search(uint32_t* distances, size_t num_points, double max_time, xosh
 
 
     best_route->time = omp_get_wtime() - best_route->time;
+
+    for(size_t i = 0; i < num_points; i++)
+        free(tabu_matrix[i]);
+    free(tabu_matrix);
+
+    free(current_route->city_order);
+    free(current_route);
+
     return best_route;
 
 }
