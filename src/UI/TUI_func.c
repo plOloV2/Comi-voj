@@ -209,6 +209,9 @@ void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
         fprintf(stdout, "\nMaximum cycles for move to stay tabu: ");
         data->max_iter_stop = user_input(1, 1000);
 
+        fprintf(stdout, "\nMaximum tabu moves in list: ");
+        data->tabu_limit = user_input(1, 1000);
+
     }
     
     

@@ -22,6 +22,7 @@ typedef struct{
     size_t max_no_up;
     size_t min_iter_stop;
     size_t max_iter_stop;
+    size_t tabu_limit;
 
 } alg_in_data;
 

@@ -37,7 +37,7 @@ Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* dis
             break;
 
         case 8:
-            result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop);
+            result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop, data->tabu_limit);
             break;
         
     }
@@ -332,12 +332,13 @@ void find_base_path(char* file_path, char* base_path){
 
 }
 
-#define ITER_PER 25
+#define ITER_PER 0.25
 #define SAMP_PER 50
 #define N_UP_PER 25
 #define RNN_USE 1
-#define MIN_ITER_STOP_PER 5
-#define MAX_ITER_STOP_PER 15
+#define MIN_ITER_STOP_PER   0.05
+#define MAX_ITER_STOP_PER   0.15
+#define MAX_TABU_MOVES      0.10
 
 void run_TB_experiment(){
 
@@ -409,9 +410,9 @@ void run_TB_experiment(){
         if(!distances)
             continue;
 
-        size_t iters = (num_points * num_points * ITER_PER) / 100;
+        size_t iters = num_points * num_points * ITER_PER;
 
-        Route* new_route = tabu_search(distances, num_points, iters, num_points * SAMP_PER, num_points * N_UP_PER, RNN_USE, (iters * MIN_ITER_STOP_PER) / 100, (iters * MAX_ITER_STOP_PER) / 100);
+        Route* new_route = tabu_search(distances, num_points, iters, num_points * SAMP_PER, num_points * N_UP_PER, RNN_USE, (size_t)(iters * MIN_ITER_STOP_PER), (size_t)(iters * MAX_ITER_STOP_PER), (size_t)(num_points * MAX_TABU_MOVES));
 
         if(!new_route){
             print_error("Tabu search failed.");
