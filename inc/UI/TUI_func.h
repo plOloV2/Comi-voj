@@ -21,10 +21,12 @@ int get_rand_point_num();
 
 void disp_dist(uint32_t* dist, size_t num_points);
 
-void get_algorithm(int* choice_algorithm, int* num_perms_or_mode, double* timeout);
+void get_algorithm(int32_t* choice_algorithm, alg_in_data* data);
 
 void display_Route(Route* data, size_t num_points);
 
 int check_data_created(uint32_t* dist, size_t num_points);
+
+int32_t user_input(int32_t lower_bound, int32_t higher_bound);
 
 #endif

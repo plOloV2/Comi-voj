@@ -6,13 +6,13 @@ void print_error(char* erro_msg){
     fprintf(stderr, ANSI_COLOR_RED ANSI_STYLE_BOLD "ERROR: %s" ANSI_RESET_ALL "\n", erro_msg);
 }
 
-static int user_input(int lower_bound, int higher_bound){
+int32_t user_input(int32_t lower_bound, int32_t higher_bound){
 
-    int input;
+    int32_t input;
 
     while(scanf("%d", &input) != 1 || input > higher_bound || input < lower_bound){
 
-        int c;
+        int32_t c;
         while((c = getchar()) != '\n' && c != EOF);
 
         fprintf(stdout, "You have chosen an incorrect value, try again (accepted value range: %d - %d): ", lower_bound, higher_bound);
@@ -35,7 +35,7 @@ void greeter(){
 
 }
 
-int start_choice(){
+int32_t start_choice(){
 
     fprintf(stdout, "\nWould you like to:"
                     "\n1. " ANSI_COLOR_BLUE     "Run calculations (P1)"             ANSI_RESET_ALL
@@ -57,7 +57,7 @@ void display_full_ran_info(){
 
 }
 
-int display_test_menu(){
+int32_t display_test_menu(){
 
     fprintf(stdout, "\n"  ANSI_STYLE_BOLD "--- TEST MENU ---" ANSI_RESET_ALL "\n");
     fprintf(stdout, "1. " ANSI_COLOR_YELLOW     "Load data from a .txt file"            ANSI_RESET_ALL "\n");
@@ -95,7 +95,7 @@ void get_file_path(char* path){
 
 }
 
-int get_rand_point_num(){
+int32_t get_rand_point_num(){
 
     fprintf(stdout, "\nPlease enter number of points to generate (6 to 100): ");
 
@@ -131,7 +131,7 @@ void disp_dist(uint32_t* dist, size_t num_points){
 
 }
 
-void get_algorithm(int* choice_algorithm, int* num_perms_or_mode, double* timeout){
+void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
 
     fprintf(stdout, "\nWhich algorithm would you like to run?\n");
     fprintf(stdout, "1. " ANSI_COLOR_BLUE ANSI_STYLE_BOLD       "N" ANSI_RESET_ALL ANSI_COLOR_BLUE      "earest "       ANSI_STYLE_BOLD "N"
@@ -154,40 +154,63 @@ void get_algorithm(int* choice_algorithm, int* num_perms_or_mode, double* timeou
     fprintf(stdout, "6. " ANSI_COLOR_MAGENTA ANSI_STYLE_BOLD    "R" ANSI_RESET_ALL ANSI_COLOR_MAGENTA   "andom algorithm\n" ANSI_RESET_ALL);
 
     fprintf(stdout, "7. " ANSI_COLOR_YELLOW ANSI_STYLE_BOLD     "B" ANSI_RESET_ALL ANSI_COLOR_YELLOW    "ranch "        ANSI_STYLE_BOLD "& B"
-            ANSI_RESET_ALL ANSI_COLOR_YELLOW    "ound (B&B)\n"       ANSI_RESET_ALL);
+            ANSI_RESET_ALL ANSI_COLOR_YELLOW "ound (B&B)\n"       ANSI_RESET_ALL);
+
+    fprintf(stdout, "8. " ANSI_COLOR_RED ANSI_STYLE_BOLD        "T" ANSI_RESET_ALL ANSI_COLOR_RED    "abu "        ANSI_STYLE_BOLD "S"
+            ANSI_RESET_ALL ANSI_COLOR_RED    "earch (TS)\n"       ANSI_RESET_ALL);
 
     fprintf(stdout, "Your choice: ");
 
-    *choice_algorithm = user_input(1, 7);
+    *choice_algorithm = user_input(1, 8);
 
     if(*choice_algorithm == 6){
 
         fprintf(stdout, "\nYou have chosen the " ANSI_COLOR_MAGENTA "Random algorithm" ANSI_RESET_ALL ".\n");
         fprintf(stdout, "Please specify the number of permutations to generate (0 to 200, 0 -> 10N): ");
-        *num_perms_or_mode = user_input(0, 200);
+        data->perms = user_input(0, 200);
 
     }else if(*choice_algorithm == 7){
         
         fprintf(stdout, "\nYou have chosen " ANSI_COLOR_YELLOW "Branch & Bound" ANSI_RESET_ALL ".\n");
         
         fprintf(stdout, "Choose search strategy (0: DFS, 1: BFS, 2: Best-FS): ");
-        int strat = user_input(0, 2);
+        int32_t strat = user_input(0, 2);
         
         fprintf(stdout, "Use RNN to find initial Upper Bound? (1: Yes, 0: No): ");
-        int rnn = user_input(0, 1);
+        int32_t rnn = user_input(0, 1);
         
-        *num_perms_or_mode = (strat << 1) | rnn;
+        data->mode = (strat << 1) | rnn;
 
-        fprintf(stdout, "Enter timeout in seconds (e.g. 120, 300): ");
-        while(scanf("%lf", timeout) != 1 || *timeout <= 0.0){
-            int c;
+        fprintf(stdout, "Enter timeout in seconds (e.g. 120): ");
+        while(scanf("%lf", &data->max_time) != 1 || data->max_time <= 0.0){
+            int32_t c;
             while((c = getchar()) != '\n' && c != EOF);
             fprintf(stdout, "Incorrect timeout value. Try again: ");
         }
 
-    } else {
-        *num_perms_or_mode = 0;
+    }else if(*choice_algorithm == 8){
+
+        fprintf(stdout, "\nYou have chosen " ANSI_COLOR_RED "Tabu Search" ANSI_RESET_ALL ".");
+        fprintf(stdout, "\nShould the algorytm start with random route (0) or with one from RNN (1): ");
+        data->use_RNN = user_input(0, 1);
+
+        fprintf(stdout, "\nFor how many iterations should the algorithm run: ");
+        data->max_iter = user_input(1, INT32_MAX);
+
+        fprintf(stdout, "\nHow big should be the sample in each cycle: ");
+        data->sample_size = user_input(1, 1000);
+
+        fprintf(stdout, "\nAfter how many cycles without imprevment should the algorithm randomize route: ");
+        data->max_no_up = user_input(1, INT32_MAX);
+
+        fprintf(stdout, "\nMinimum cycles for move to stay tabu: ");
+        data->min_iter_stop = user_input(1, 1000);
+
+        fprintf(stdout, "\nMaximum cycles for move to stay tabu: ");
+        data->max_iter_stop = user_input(1, 1000);
+
     }
+    
     
 }
 
@@ -208,7 +231,7 @@ void display_Route(Route* data, size_t num_points){
 
 }
 
-int check_data_created(uint32_t* dist, size_t num_points){
+int32_t check_data_created(uint32_t* dist, size_t num_points){
 
     if(!dist || num_points <= 2){
 

@@ -16,4 +16,6 @@ Route* rand_seq(uint32_t* distances, size_t num_points, int perms);
 
 Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_seconds, uint8_t mode);
 
+Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size_t sample_size, size_t max_no_up, uint8_t use_RNN, size_t min_iter_stop, size_t max_iter_stop);
+
 #endif

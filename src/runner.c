@@ -3,7 +3,7 @@
 #include "UI/TUI_func.h"
 #include <math.h>
 
-Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, uint32_t* distances, size_t num_points){
+Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* distances, size_t num_points){
 
     Route* result = NULL;
 
@@ -29,11 +29,15 @@ Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, u
             break;
         
         case 6:
-            result = rand_seq(distances, num_points, perms_or_mode);
+            result = rand_seq(distances, num_points, data->perms);
             break;
 
         case 7:
-            result = branch_and_bound(distances, num_points, timeout, (uint8_t)perms_or_mode);
+            result = branch_and_bound(distances, num_points, data->max_time, data->mode);
+            break;
+
+        case 8:
+            result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop);
             break;
         
     }
@@ -52,9 +56,9 @@ Route**** run_whole_calculation(uint32_t*** data_table){
         return NULL;
     }
 
-    int calc_fail = 0;
+    int32_t calc_fail = 0;
 
-    for(int i = 0; i < 6; i++){
+    for(int32_t i = 0; i < 6; i++){
 
         if(calc_fail)
             break;
@@ -66,7 +70,7 @@ Route**** run_whole_calculation(uint32_t*** data_table){
             break;
         }
 
-        for(int j = 0; j < 7; j++){
+        for(int32_t j = 0; j < 7; j++){
             results[i][j] = calloc(100, sizeof(Route*));
             if(!results[i][j]){
                 print_error("results[i][j] alloc failed.\n");
@@ -81,7 +85,7 @@ Route**** run_whole_calculation(uint32_t*** data_table){
 
     if(!calc_fail){
 
-        for(int i = 0; i < 6; i++){
+        for(int32_t i = 0; i < 6; i++){
 
             if(calc_fail)
                 break;
@@ -92,13 +96,13 @@ Route**** run_whole_calculation(uint32_t*** data_table){
 
             calc_time_whole = omp_get_wtime();
 
-            for(int j = 0; j < 7; j++){
+            for(int32_t j = 0; j < 7; j++){
 
                 if(calc_fail)
                     break;
 
-                int true_size = j + 8;
-                int progress = 0;
+                int32_t true_size = j + 8;
+                int32_t progress = 0;
 
                 fprintf(stdout, "\tCalculating for data size: " ANSI_STYLE_BOLD ANSI_COLOR_YELLOW "%d" ANSI_RESET_ALL "... 0%%", true_size);
                 fflush(stdout);
@@ -106,7 +110,7 @@ Route**** run_whole_calculation(uint32_t*** data_table){
                 double calc_time_data = omp_get_wtime();
 
                 #pragma omp parallel for schedule(dynamic)
-                for(int k = 0; k < 100; k++){
+                for(int32_t k = 0; k < 100; k++){
 
                     if(calc_fail)
                         continue;
@@ -152,13 +156,13 @@ Route**** run_whole_calculation(uint32_t*** data_table){
     }
 
     if(calc_fail){
-        for(int i = 0; i < 6; i++){
+        for(int32_t i = 0; i < 6; i++){
 
             if(results[i]){
-                for(int j = 0; j < 7; j++){
+                for(int32_t j = 0; j < 7; j++){
 
                     if(results[i][j]){
-                        for(int k = 0; k < 100; k++){
+                        for(int32_t k = 0; k < 100; k++){
 
                             if(results[i][j][k]){
                                 free(results[i][j][k]->city_order); 
@@ -210,22 +214,22 @@ void run_bb_experiment(double timeout_seconds){
 
     const char* strategy_names[] = {"DFS", "BFS", "Best-FS"};
 
-    for(int n = 7; n <= 25; n++){
+    for(int32_t n = 7; n <= 25; n++){
         fprintf(stdout, "\n" ANSI_STYLE_BOLD "Starting tests for N = %d" ANSI_RESET_ALL "\n", n);
 
         uint32_t** test_instances = malloc(100 * sizeof(uint32_t*));
-        for(int i = 0; i < 100; i++)
+        for(int32_t i = 0; i < 100; i++)
             test_instances[i] = create_random_distances(n, &RNG);
         
-        for(int strat = 0; strat < 3; strat++){
-            for(int rnn_init = 0; rnn_init < 2; rnn_init++){
+        for(int32_t strat = 0; strat < 3; strat++){
+            for(int32_t rnn_init = 0; rnn_init < 2; rnn_init++){
 
                 if(strat == 1 && (rnn_init == 0 || n > 17))
                     continue;
                 
                 uint8_t mode = (strat << 1) | rnn_init;
                 double total_time = 0.0;
-                int timeouts = 0;
+                int32_t timeouts = 0;
                 
                 double times[100] = {0}; 
 
@@ -233,7 +237,7 @@ void run_bb_experiment(double timeout_seconds){
                         strategy_names[strat], rnn_init ? "Yes" : "No");
                 fflush(stdout);
 
-                for(int i = 0; i < 100; i++){
+                for(int32_t i = 0; i < 100; i++){
                     Route* res = branch_and_bound(test_instances[i], n, timeout_seconds, mode);
                     
                     if(res){
@@ -259,7 +263,7 @@ void run_bb_experiment(double timeout_seconds){
                 double avg_time = total_time / 100.0;
                 
                 double variance = 0.0;
-                for(int i = 0; i < 100; i++)
+                for(int32_t i = 0; i < 100; i++)
                     variance += (times[i] - avg_time) * (times[i] - avg_time);
 
                 double std_dev = sqrt(variance / 100.0);
@@ -274,7 +278,7 @@ void run_bb_experiment(double timeout_seconds){
 
         }
 
-        for(int i = 0; i < 100; i++)
+        for(int32_t i = 0; i < 100; i++)
             free(test_instances[i]);
 
         free(test_instances);
@@ -328,6 +332,13 @@ void find_base_path(char* file_path, char* base_path){
 
 }
 
+#define ITER_PER 25
+#define SAMP_PER 50
+#define N_UP_PER 25
+#define RNN_USE 1
+#define MIN_ITER_STOP_PER 5
+#define MAX_ITER_STOP_PER 15
+
 void run_TB_experiment(){
 
     char results_file_path[256];
@@ -357,8 +368,6 @@ void run_TB_experiment(){
     char base_path[256];
     find_base_path(results_file_path, base_path);
     size_t base_path_lenght = strlen(base_path);
-
-    double max_time = 0;
     
     uint64_t seed;
     create_rand_seed(&seed);
@@ -366,7 +375,6 @@ void run_TB_experiment(){
     xoshiro_init(&RNG, seed);
 
     printf("\n");
-
 
 
     while(1){
@@ -397,9 +405,20 @@ void run_TB_experiment(){
         strncpy(ATSP_path + base_path_lenght + TSP_file_lenght, ".atsp", sizeof(ATSP_path) - base_path_lenght - TSP_file_lenght);
 
         size_t num_points = 0;
-        uint32_t* distances = read_data_from_TSPLIB(ATSP_path, &num_points, 1);
+        uint32_t* distances = read_data_from_TSPLIB(ATSP_path, &num_points, 0);
+        if(!distances)
+            continue;
 
+        size_t iters = (num_points * num_points * ITER_PER) / 100;
 
+        Route* new_route = tabu_search(distances, num_points, iters, num_points * SAMP_PER, num_points * N_UP_PER, RNN_USE, (iters * MIN_ITER_STOP_PER) / 100, (iters * MAX_ITER_STOP_PER) / 100);
+
+        if(!new_route){
+            print_error("Tabu search failed.");
+        }else {
+            display_Route(new_route, num_points);
+            printf("Optimum is: %u\n\n", best_solution);
+        }
 
         free(distances);
 

@@ -3,17 +3,18 @@
 #include "UI/TUI_func.h"
 #include "data_operations/data_prepare.h"
 
-Route* run_choosen_algorithm(int algorithm, int perms_or_mode, double timeout, uint32_t* distances, size_t num_points);
+Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* distances, size_t num_points);
 Route**** run_whole_calculation(uint32_t*** data_table);
-int save_results_to_csv(Route**** results);
+int32_t save_results_to_csv(Route**** results);
 void run_bb_experiment(double timeout_seconds);
 void run_TB_experiment();
 
-int main(){
+
+int32_t main(){
 
     greeter();
 
-    int decision = start_choice();
+    int32_t decision = start_choice();
 
     if(decision == 1){
 
@@ -34,15 +35,15 @@ int main(){
             fprintf(stdout, "All was saved safely.\n");
         }
 
-        for(int i = 0; i < 6; i++){
+        for(int32_t i = 0; i < 6; i++){
 
             if(calc_results[i]){
 
-                for(int j = 0; j < 7; j++){
+                for(int32_t j = 0; j < 7; j++){
 
                     if(calc_results[i][j]){
 
-                        for(int k = 0; k < 100; k++){
+                        for(int32_t k = 0; k < 100; k++){
 
                             if(calc_results[i][j][k]){
                                 free(calc_results[i][j][k]->city_order);
@@ -63,9 +64,9 @@ int main(){
 
         free(calc_results);
 
-        for(int i = 0; i < 7; i++){
+        for(int32_t i = 0; i < 7; i++){
             if(data_table[i]){
-                for(int j = 0; j < 100; j++)
+                for(int32_t j = 0; j < 100; j++)
                     free(data_table[i][j]);
                 
                 free(data_table[i]);
@@ -78,7 +79,7 @@ int main(){
 
     }else if(decision == 2){
 
-        int run = 1;
+        int32_t run = 1;
 
         uint32_t* dist = NULL;
         size_t num_points = 0;
@@ -88,11 +89,13 @@ int main(){
         create_rand_seed(&seed);
 
         xoshiro256_state RNG;
-        xoshiro_init(&RNG, seed); 
+        xoshiro_init(&RNG, seed);
+
+        alg_in_data data;
 
         while(run){
 
-            int conf = display_test_menu();
+            int32_t conf = display_test_menu();
 
             char path[256];
 
@@ -125,16 +128,15 @@ int main(){
                     break;
                 
                 case 5:
-                    int good_to_go = check_data_created(dist, num_points);
+                    int32_t good_to_go = check_data_created(dist, num_points);
                     if(!good_to_go)
                         break;
 
-                    int algorithm = 0, perms_or_mode = 0;
-                    double timeout = 0.0;
+                    int32_t algorithm = 0;
                     
-                    get_algorithm(&algorithm, &perms_or_mode, &timeout);
+                    get_algorithm(&algorithm, &data);
 
-                    result = run_choosen_algorithm(algorithm, perms_or_mode, timeout, dist, num_points);
+                    result = run_choosen_algorithm(algorithm, &data, dist, num_points);
                     display_Route(result, num_points);
 
                     if(result)
