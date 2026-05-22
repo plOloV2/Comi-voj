@@ -113,6 +113,39 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
     xoshiro256_state xos_state;
     xoshiro_init(&xos_state, xos_seed);
 
+    
+
+    // creates a queue to save tabu moves (use just to limit max number of moves that are tabu)
+    tabu_move* tabu_queue = NULL;
+    if(tabu_limit > 0) {
+        tabu_queue = malloc(tabu_limit * sizeof(tabu_move));
+        if(!tabu_queue){
+            print_error("Tabu queue alloc failed.");
+            free(best_route->city_order);
+            free(best_route);
+            return NULL;
+        }
+    }
+    
+    // creates a matrix to save tabu moves (allows O(1) checking if move is tabu)
+    size_t** tabu_matrix = alloc_tabu_matrix(num_points);
+    if(!tabu_matrix){
+        print_error("Tabu matrix alloc failed.");
+        free(best_route->city_order);
+        free(best_route);
+        free(tabu_queue);
+        return NULL;
+    }
+    size_t tabu_head = 0;
+    size_t tabu_count = 0;
+
+    size_t since_last_up = 0;
+    size_t current_iter = 1;
+    size_t iter_diff = max_iter_stop - min_iter_stop;
+
+    // start of time measurement
+    best_route->time = omp_get_wtime();
+
     Route* current_route = NULL;
     if(use_RNN){
 
@@ -153,45 +186,9 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
 
     }
 
-    // creates a queue to save tabu moves (use just to limit max number of moves that are tabu)
-    tabu_move* tabu_queue = NULL;
-    if(tabu_limit > 0) {
-        tabu_queue = malloc(tabu_limit * sizeof(tabu_move));
-        if(!tabu_queue){
-            print_error("Tabu queue alloc failed.");
-            free(best_route->city_order);
-            free(best_route);
-            free(current_route->city_order);
-            free(current_route);
-            return NULL;
-        }
-    }
-    
-    // creates a matrix to save tabu moves (allows O(1) checking if move is tabu)
-    size_t** tabu_matrix = alloc_tabu_matrix(num_points);
-    if(!tabu_matrix){
-        print_error("Tabu matrix alloc failed.");
-        free(best_route->city_order);
-        free(best_route);
-        free(current_route->city_order);
-        free(current_route);
-        free(tabu_queue);
-        return NULL;
-    }
-
     best_route->distance_u = current_route->distance_u;
     memcpy(best_route->city_order, current_route->city_order, (num_points * sizeof(uint16_t)));
 
-    size_t tabu_head = 0;
-    size_t tabu_count = 0;
-
-    size_t since_last_up = 0;
-    size_t current_iter = 1;
-    size_t iter_diff = max_iter_stop - min_iter_stop;
-
-    // start of time measurement
-    best_route->time = omp_get_wtime();
-    
     
     while(current_iter++ <= max_iter){
 

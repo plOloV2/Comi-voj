@@ -454,7 +454,8 @@ void run_TB_experiment(){
         for(int l = 0; l < 6; l++){
             
             size_t current_limit = test_limits[l];
-            if (l > 0 && current_limit == 0) current_limit = 1;
+            if(l > 0 && current_limit == 0)
+                current_limit = 1;
 
             new_route = tabu_search(distances, num_points, iters, sample_size, max_no_up, 1, min_tabu_base, max_tabu_base, current_limit, 1);
 
@@ -505,9 +506,9 @@ void run_TB_experiment(){
             "Stala_0.5N", 
             "Stala_0.8N", 
             "Losowa_0.1N_0.3N", 
-            "Losowa_0.1N_0.6N", 
-            "Losowa_0.2N_0.8N", 
-            "Losowa_0.2N_1.2N", 
+            "Losowa_0.2N_0.6N", 
+            "Losowa_0.4N_0.8N", 
+            "Losowa_0.6N_1.2N", 
             "Losowa_0.8N_1.5N"
         };
         
