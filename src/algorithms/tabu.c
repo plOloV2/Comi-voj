@@ -88,7 +88,7 @@ static uint64_t calculate_road_dist(uint32_t* distances, size_t num_points, uint
 }
 
 // main Tabu Search function
-Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size_t sample_size, size_t max_no_up, uint8_t use_RNN, size_t min_iter_stop, size_t max_iter_stop, size_t tabu_limit){
+Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size_t sample_size, size_t max_no_up, uint8_t use_RNN, size_t min_iter_stop, size_t max_iter_stop, size_t tabu_limit, uint8_t use_aspiration){
 
     if(num_points <= 3){
         print_error("Graph size is less or eqal to 3. You can find the best route by yourself.\n");
@@ -154,14 +154,17 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
     }
 
     // creates a queue to save tabu moves (use just to limit max number of moves that are tabu)
-    tabu_move* tabu_queue = malloc(tabu_limit * sizeof(tabu_move));
-    if(!tabu_queue){
-        print_error("Tabu queue alloc failed.");
-        free(best_route->city_order);
-        free(best_route);
-        free(current_route->city_order);
-        free(current_route);
-        return NULL;
+    tabu_move* tabu_queue = NULL;
+    if(tabu_limit > 0) {
+        tabu_queue = malloc(tabu_limit * sizeof(tabu_move));
+        if(!tabu_queue){
+            print_error("Tabu queue alloc failed.");
+            free(best_route->city_order);
+            free(best_route);
+            free(current_route->city_order);
+            free(current_route);
+            return NULL;
+        }
     }
     
     // creates a matrix to save tabu moves (allows O(1) checking if move is tabu)
@@ -191,6 +194,11 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
     
     
     while(current_iter++ <= max_iter){
+
+        if((current_iter % 16) == 1 && (omp_get_wtime() - best_route->time) >= 900.0){
+            print_error("Algorithm exceeded 15minutes. Stoping now.");
+            break;
+        }
 
         if(since_last_up++ > max_no_up){    // algorithm stuck
 
@@ -284,7 +292,7 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
                 if(new_dist < best_sample){
             
                     uint8_t is_tabu = (tabu_matrix[town_1][new_pos] >= current_iter || tabu_matrix[town_2][old_pos] >= current_iter);
-                    uint8_t aspiration = (new_dist < best_route->distance_u);
+                    uint8_t aspiration = (use_aspiration && new_dist < best_route->distance_u);
                     
                     // if move is not in tabu and is better then previuse best we remember it
                     if(!is_tabu || aspiration){
@@ -317,26 +325,31 @@ Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size
 
                 for(int m = 0; m < 2; m++){
 
-                    // if we reach a limit we delete old moves from tabu
-                    if(tabu_count == tabu_limit){
-                        uint16_t old_town = tabu_queue[tabu_head].town;
-                        uint16_t old_pos = tabu_queue[tabu_head].pos;
+                    if(tabu_limit != 0){
+
+                        // if we reach a limit we delete old moves from tabu
+                        if(tabu_count == tabu_limit){
+                            uint16_t old_town = tabu_queue[tabu_head].town;
+                            uint16_t old_pos = tabu_queue[tabu_head].pos;
+                            
+                            tabu_matrix[old_town][old_pos] = 0; 
+                        }else {
+                            tabu_count++;
+                        }
+
+                        // saving new move in queue
+                        tabu_queue[tabu_head].town = moves_to_add[m].town;
+                        tabu_queue[tabu_head].pos = moves_to_add[m].pos;
                         
-                        tabu_matrix[old_town][old_pos] = 0; 
-                    }else {
-                        tabu_count++;
+
+                        // setting new queue head
+                        tabu_head = (tabu_head + 1) % tabu_limit;
+
                     }
 
-                    // saving new move in queue
-                    tabu_queue[tabu_head].town = moves_to_add[m].town;
-                    tabu_queue[tabu_head].pos = moves_to_add[m].pos;
-                    
                     // saving new move in matrix
-                    tabu_matrix[moves_to_add[m].town][moves_to_add[m].pos] = 
-                        current_iter + (size_t)((xoshiro_next(&xos_state) % iter_diff) + min_iter_stop);
-
-                    // setting new queue head
-                    tabu_head = (tabu_head + 1) % tabu_limit;
+                    tabu_matrix[moves_to_add[m].town][moves_to_add[m].pos] = current_iter +
+                        ((iter_diff == 0) ? min_iter_stop : (size_t)((xoshiro_next(&xos_state) % iter_diff) + min_iter_stop));
 
                 }
 

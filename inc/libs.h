@@ -17,6 +17,7 @@ typedef struct{
     uint8_t mode;
 
     uint8_t use_RNN;
+    uint8_t use_aspiration;
     size_t max_iter;
     size_t sample_size;
     size_t max_no_up;

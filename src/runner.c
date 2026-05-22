@@ -37,7 +37,7 @@ Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* dis
             break;
 
         case 8:
-            result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop, data->tabu_limit);
+            result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop, data->tabu_limit, data->use_aspiration);
             break;
         
     }
@@ -332,18 +332,10 @@ void find_base_path(char* file_path, char* base_path){
 
 }
 
-#define ITER_PER 0.25
-#define SAMP_PER 50
-#define N_UP_PER 25
-#define RNN_USE 1
-#define MIN_ITER_STOP_PER   0.05
-#define MAX_ITER_STOP_PER   0.15
-#define MAX_TABU_MOVES      0.10
 
 void run_TB_experiment(){
 
     char results_file_path[256];
-
     get_file_path(results_file_path);
 
     FILE* f = fopen(results_file_path, "r");
@@ -352,7 +344,14 @@ void run_TB_experiment(){
         return;
     }
 
-    printf("\n");
+    FILE* csv_file = fopen("ts.csv", "w");
+    if(!csv_file){
+        print_error("Failed to create tabu_results.csv file.\n");
+        fclose(f);
+        return;
+    }
+    
+    fprintf(csv_file, "Instance,N,Optimum,Test_Type,Param_Value,Found_Distance,Rel_Error_%%,Time_s\n");
 
     char line[64];
     char TSP_file[32];
@@ -362,6 +361,7 @@ void run_TB_experiment(){
     clear_string(line);
     if(strcmp(line, "Best solution of ATSP") != 0){
         print_error("Headline missmatch. Is it the right file?\n");
+        fclose(csv_file);
         fclose(f);
         return;
     }
@@ -374,9 +374,6 @@ void run_TB_experiment(){
     create_rand_seed(&seed);
     xoshiro256_state RNG;
     xoshiro_init(&RNG, seed);
-
-    printf("\n");
-
 
     while(1){
 
@@ -397,7 +394,6 @@ void run_TB_experiment(){
             val_ptr++;
         
         strncpy(value, val_ptr, sizeof(value));
-
         uint32_t best_solution = atoi(value);
 
         char ATSP_path[256];
@@ -410,21 +406,150 @@ void run_TB_experiment(){
         if(!distances)
             continue;
 
-        size_t iters = num_points * num_points * ITER_PER;
+        // Parametry bazowe wyznaczane relatywnie do rozmiaru instancji
+        size_t iters = num_points * num_points * 0.75;
+        size_t sample_size = (size_t)(iters * 0.50);
+        size_t max_no_up = (size_t)(iters * 0.05);
+        size_t min_tabu_base = (size_t)(iters * 0.05);
+        size_t max_tabu_base = (size_t)(iters * 0.15);
+        size_t tabu_limit_base = (size_t)(iters * 0.012);
+        if(tabu_limit_base == 0) 
+            tabu_limit_base = 5;
 
-        Route* new_route = tabu_search(distances, num_points, iters, num_points * SAMP_PER, num_points * N_UP_PER, RNN_USE, (size_t)(iters * MIN_ITER_STOP_PER), (size_t)(iters * MAX_ITER_STOP_PER), (size_t)(num_points * MAX_TABU_MOVES));
+        Route* new_route = NULL;
+        double rel_error = 0.0;
 
-        if(!new_route){
-            print_error("Tabu search failed.");
-        }else {
-            display_Route(new_route, num_points);
-            printf("Optimum is: %u\n\n", best_solution);
+        for(int rnn = 1; rnn >= 0; rnn--){
+
+            new_route = tabu_search(distances, num_points, iters, sample_size, max_no_up, rnn, min_tabu_base, max_tabu_base, tabu_limit_base, 1);
+
+            if(new_route){
+
+                rel_error = ((double)new_route->distance_u - (double)best_solution) / (double)best_solution * 100.0;
+
+                fprintf(csv_file, "%s,%zu,%u,%s,%s,%zu,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, 
+                        (rnn ? "3.0_Rozmiar_Base" : "3.5_Rozw_Poczatkowe"), 
+                        (rnn ? "RNN" : "Random"), 
+                        new_route->distance_u, rel_error, new_route->time);
+
+                fflush(csv_file);
+
+                free(new_route->city_order);
+                free(new_route);
+            }
+
+        }
+
+        size_t test_limits[] = {
+            0,
+            (size_t)(num_points * 0.1),
+            (size_t)(num_points * 0.5),
+            (size_t)(num_points * 1.0),
+            (size_t)(num_points * 2.0),
+            (size_t)(num_points * 5.0)
+        };
+        const char* limit_labels[] = {"Brak_0", "10%_N", "50%_N", "100%_N", "200%_N", "500%_N"};
+
+        for(int l = 0; l < 6; l++){
+            
+            size_t current_limit = test_limits[l];
+            if (l > 0 && current_limit == 0) current_limit = 1;
+
+            new_route = tabu_search(distances, num_points, iters, sample_size, max_no_up, 1, min_tabu_base, max_tabu_base, current_limit, 1);
+
+            if(new_route){
+
+                rel_error = ((double)new_route->distance_u - (double)best_solution) / (double)best_solution * 100.0;
+
+                fprintf(csv_file, "%s,%zu,%u,%s,%s,%zu,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, "4.0_Dlugosc_Listy", limit_labels[l],
+                        new_route->distance_u, rel_error, new_route->time);
+
+                fflush(csv_file);
+
+                free(new_route->city_order);
+                free(new_route);
+            }
+
+        }
+
+        size_t cad_min[] = {
+            2,
+            (size_t)(num_points * 0.1),
+            (size_t)(num_points * 0.3),
+            (size_t)(num_points * 0.5),
+            (size_t)(num_points * 0.8),
+            (size_t)(num_points * 0.1),
+            (size_t)(num_points * 0.2),
+            (size_t)(num_points * 0.4),
+            (size_t)(num_points * 0.6),
+            (size_t)(num_points * 0.8)
+        };
+        size_t cad_max[] = {
+            2,
+            (size_t)(num_points * 0.1),
+            (size_t)(num_points * 0.3),
+            (size_t)(num_points * 0.5),
+            (size_t)(num_points * 0.8),
+            (size_t)(num_points * 0.3),
+            (size_t)(num_points * 0.6),
+            (size_t)(num_points * 0.8),
+            (size_t)(num_points * 1.2),
+            (size_t)(num_points * 1.5)
+        };
+        const char* cad_labels[] = {
+            "Stala_BardzoKrotka", 
+            "Stala_0.1N",
+            "Stala_0.3N",  
+            "Stala_0.5N", 
+            "Stala_0.8N", 
+            "Losowa_0.1N_0.3N", 
+            "Losowa_0.1N_0.6N", 
+            "Losowa_0.2N_0.8N", 
+            "Losowa_0.2N_1.2N", 
+            "Losowa_0.8N_1.5N"
+        };
+        
+        for(int c = 0; c < 10; c++){
+            size_t c_min = cad_min[c] < 1 ? 1 : cad_min[c];
+            size_t c_max = cad_max[c];
+
+            new_route = tabu_search(distances, num_points, iters, sample_size, max_no_up, 1, c_min, c_max, tabu_limit_base, 1);
+
+            if(new_route){
+
+                rel_error = ((double)new_route->distance_u - (double)best_solution) / (double)best_solution * 100.0;
+                fprintf(csv_file, "%s,%zu,%u,%s,%s,%zu,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, "4.5_Wielkosc_Kadencji", cad_labels[c],
+                        new_route->distance_u, rel_error, new_route->time);
+
+                fflush(csv_file);
+
+                free(new_route->city_order);
+                free(new_route);
+            }
+
+        }
+
+        new_route = tabu_search(distances, num_points, iters, sample_size, max_no_up, 1, min_tabu_base, max_tabu_base, tabu_limit_base, 0);
+        if(new_route){
+            rel_error = ((double)new_route->distance_u - (double)best_solution) / (double)best_solution * 100.0;
+            fprintf(csv_file, "%s,%zu,%u,%s,%s,%zu,%.4lf,%.4lf\n",
+                    TSP_file, num_points, best_solution, "5.0_Kryterium_Aspiracji", "Wylaczone",
+                    new_route->distance_u, rel_error, new_route->time);
+
+            fflush(csv_file);
+
+            free(new_route->city_order);
+            free(new_route);
+
         }
 
         free(distances);
-
     }
 
-    return;
+    fclose(csv_file);
+    fclose(f);
 
 }

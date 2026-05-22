@@ -194,6 +194,9 @@ void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
         fprintf(stdout, "\nShould the algorytm start with random route (0) or with one from RNN (1): ");
         data->use_RNN = user_input(0, 1);
 
+        fprintf(stdout, "\nShould the algorytm use aspiration (1) or not (0): ");
+        data->use_aspiration = user_input(0, 1);
+
         fprintf(stdout, "\nFor how many iterations should the algorithm run: ");
         data->max_iter = user_input(1, INT32_MAX);
 
@@ -209,8 +212,8 @@ void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
         fprintf(stdout, "\nMaximum cycles for move to stay tabu: ");
         data->max_iter_stop = user_input(1, 1000);
 
-        fprintf(stdout, "\nMaximum tabu moves in list: ");
-        data->tabu_limit = user_input(1, 1000);
+        fprintf(stdout, "\nMaximum tabu moves in list (0 -> no limit): ");
+        data->tabu_limit = user_input(0, 1000);
 
     }
     
