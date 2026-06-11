@@ -30,6 +30,7 @@ add_executable(${PROJECT_NAME}
     src/data_operations/data_prepare.c
     src/data_operations/stack_op.c
     src/data_operations/save_data.c
+    src/algorithms/gen.c
     src/algorithms/tabu.c
     src/algorithms/b_and_b_best.c
     src/algorithms/b_and_b.c
