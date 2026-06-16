@@ -8,6 +8,7 @@ Route**** run_whole_calculation(uint32_t*** data_table);
 int32_t save_results_to_csv(Route**** results);
 void run_bb_experiment(double timeout_seconds);
 void run_TB_experiment();
+void run_GA_experiment();
 
 
 int32_t main(){
@@ -164,6 +165,10 @@ int32_t main(){
     } else if(decision == 4){
 
         run_TB_experiment();
+
+    } else if(decision == 5){ 
+
+        run_GA_experiment();
 
     }
 

@@ -41,11 +41,12 @@ int32_t start_choice(){
                     "\n1. " ANSI_COLOR_BLUE     "Run calculations (P1)"             ANSI_RESET_ALL
                     "\n2. " ANSI_COLOR_GREEN    "Test implemented algorithms"       ANSI_RESET_ALL
                     "\n3. " ANSI_COLOR_MAGENTA  "Test implemented B&B (P2)"         ANSI_RESET_ALL
-                    "\n4. " ANSI_COLOR_CYAN     "Test implemented TB (P3)"          ANSI_RESET_ALL);
+                    "\n4. " ANSI_COLOR_CYAN     "Test implemented TB (P3)"          ANSI_RESET_ALL
+                    "\n5. " ANSI_COLOR_YELLOW   "Test implemented GA (P4)"          ANSI_RESET_ALL);
 
     fprintf(stdout, "\nYour choice: ");
 
-    return user_input(1, 4);
+    return user_input(1, 5);
 
 }
 
@@ -159,9 +160,12 @@ void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
     fprintf(stdout, "8. " ANSI_COLOR_RED ANSI_STYLE_BOLD        "T" ANSI_RESET_ALL ANSI_COLOR_RED    "abu "        ANSI_STYLE_BOLD "S"
             ANSI_RESET_ALL ANSI_COLOR_RED    "earch (TS)\n"       ANSI_RESET_ALL);
 
+    fprintf(stdout, "9. " ANSI_COLOR_GREEN ANSI_STYLE_BOLD      "G" ANSI_RESET_ALL ANSI_COLOR_GREEN    "enetic "     ANSI_STYLE_BOLD "A"
+            ANSI_RESET_ALL ANSI_COLOR_GREEN  "lgorithm (GA)\n"    ANSI_RESET_ALL);
+
     fprintf(stdout, "Your choice: ");
 
-    *choice_algorithm = user_input(1, 8);
+    *choice_algorithm = user_input(1, 9);
 
     if(*choice_algorithm == 6){
 
@@ -215,6 +219,44 @@ void get_algorithm(int32_t* choice_algorithm, alg_in_data* data){
         fprintf(stdout, "\nMaximum tabu moves in list (0 -> no limit): ");
         data->tabu_limit = user_input(0, 1000);
 
+    }else if(*choice_algorithm == 9){
+        fprintf(stdout, "\nYou have chosen " ANSI_COLOR_GREEN "Genetic Algorithm" ANSI_RESET_ALL ".");
+        
+        fprintf(stdout, "\nEnter max execution time (seconds): ");
+        while(scanf("%lf", &data->max_time) != 1 || data->max_time <= 0.0){
+            int32_t c; while((c = getchar()) != '\n' && c != EOF);
+            fprintf(stdout, "Incorrect timeout value. Try again: ");
+        }
+
+        fprintf(stdout, "Enter population size(%%): ");
+        data->generation_size = user_input(1, INT32_MAX);
+
+        fprintf(stdout, "Enter mutation rate (e.g. 0.01 for 1%%): ");
+        while(scanf("%lf", &data->mutat_rate) != 1 || data->mutat_rate < 0.0 || data->mutat_rate > 1.0){
+            int32_t c; while((c = getchar()) != '\n' && c != EOF);
+            fprintf(stdout, "Incorrect rate. Try again (0.0 to 1.0): ");
+        }
+
+        fprintf(stdout, "Enter crossover rate (e.g. 0.8 for 80%%): ");
+        while(scanf("%lf", &data->cross_rate) != 1 || data->cross_rate < 0.0 || data->cross_rate > 1.0){
+            int32_t c; while((c = getchar()) != '\n' && c != EOF);
+            fprintf(stdout, "Incorrect rate. Try again (0.0 to 1.0): ");
+        }
+
+        fprintf(stdout, "Choose Selection (0: Roulette, 1: Tournament): ");
+        int sel = user_input(0, 1);
+        
+        fprintf(stdout, "Choose Crossover (0: PMX, 1: OX): ");
+        int cross = user_input(0, 1);
+        
+        fprintf(stdout, "Choose Mutation (0: Invert, 1: Swap): ");
+        int mut = user_input(0, 1);
+        
+        data->config = (mut << 2) | (cross << 1) | sel;
+
+        fprintf(stdout, "Enter targeted road quality: ");
+        data->target = user_input(1, INT32_MAX);
+        
     }
     
     

@@ -25,6 +25,13 @@ typedef struct{
     size_t max_iter_stop;
     size_t tabu_limit;
 
+    size_t generation_size;
+    uint8_t config;
+    double mutat_rate;
+    double cross_rate;
+    uint64_t target;
+    double avg_last_gen;
+
 } alg_in_data;
 
 #endif

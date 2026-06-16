@@ -18,4 +18,6 @@ Route* branch_and_bound(uint32_t* distances, size_t num_points, double timeout_s
 
 Route* tabu_search(uint32_t* distances, size_t num_points, size_t max_iter, size_t sample_size, size_t max_no_up, uint8_t use_RNN, size_t min_iter_stop, size_t max_iter_stop, size_t tabu_limit, uint8_t use_aspiration);
 
+Route* genetic(uint32_t* distances, const size_t num_points, const double max_sec, const size_t generation_size, const uint8_t config, const double mutat_rate, const double cross_rate, const uint64_t target, double* avg_last_gen);
+
 #endif

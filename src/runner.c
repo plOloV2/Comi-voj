@@ -39,6 +39,10 @@ Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* dis
         case 8:
             result = tabu_search(distances, num_points, data->max_iter, data->sample_size, data->max_no_up, data->use_RNN, data->min_iter_stop, data->max_iter_stop, data->tabu_limit, data->use_aspiration);
             break;
+
+        case 9:
+            result = genetic(distances, num_points, data->max_time, (size_t)(((double)data->generation_size / 100.0) * (double)num_points), data->config, data->mutat_rate, data->cross_rate, data->target, &data->avg_last_gen);
+            break;
         
     }
 
@@ -289,8 +293,6 @@ void run_bb_experiment(double timeout_seconds){
     fprintf(stdout, "\nCalculations done. Results saved in " ANSI_STYLE_BOLD "bb_results_comparison.csv" ANSI_RESET_ALL ".\n");
     
 }
-
-
 
 void get_file_path(char* path);
 uint32_t* read_data_from_TSPLIB(char* file_path, size_t* num_points, uint8_t silence_mode);
@@ -552,5 +554,149 @@ void run_TB_experiment(){
 
     fclose(csv_file);
     fclose(f);
+
+}
+
+
+void run_GA_experiment(){
+    char results_file_path[256];
+    get_file_path(results_file_path);
+
+    FILE* f = fopen(results_file_path, "r");
+    if(!f){
+        print_error("Failed to open TSPLIB results file.\n");
+        return;
+    }
+
+    FILE* csv_file = fopen("ga_results.csv", "w");
+    if(!csv_file){
+        print_error("Failed to create ga_results.csv.\n");
+        fclose(f);
+        return;
+    }
+    
+    fprintf(csv_file, "Instance,N,Optimum,Test_Type,Param_Value,Found_Distance,Rel_Error_%%,Time_s,Avg_Last_Gen,Avg_Rel_Error_%%\n");
+
+    char line[64], TSP_file[32], value[32];
+    fgets(line, sizeof(line), f); // Skip header
+
+    char base_path[256];
+    find_base_path(results_file_path, base_path);
+    size_t base_path_lenght = strlen(base_path);
+
+    while(fgets(line, sizeof(line), f)){
+
+        if(line[0] == '\n' || line[0] == '\r')
+            continue;
+        clear_string(line);
+
+        if(sscanf(line, "%31[^: \t\n]", TSP_file) != 1)
+            continue;
+
+        size_t TSP_file_lenght = strlen(TSP_file);
+        char* val_ptr = line + TSP_file_lenght;
+
+        while(*val_ptr == ':' || *val_ptr == ' ' || *val_ptr == '\t')
+            val_ptr++;
+        
+        strncpy(value, val_ptr, sizeof(value));
+        uint32_t best_solution = atoi(value);
+
+        char ATSP_path[256];
+        strncpy(ATSP_path, base_path, sizeof(ATSP_path));
+        strncpy(ATSP_path + base_path_lenght, TSP_file, sizeof(ATSP_path) - base_path_lenght);
+        strncpy(ATSP_path + base_path_lenght + TSP_file_lenght, ".atsp", sizeof(ATSP_path) - base_path_lenght - TSP_file_lenght);
+
+        size_t num_points = 0;
+        uint32_t* distances = read_data_from_TSPLIB(ATSP_path, &num_points, 0);
+
+        if(!distances)
+            continue;
+
+        // Base GA Parameters
+        double max_time = 900.0; // 15 mins max per 3.0 requirement
+        size_t base_pop = num_points * 2; 
+        double m_rate = 0.05;
+        double c_rate = 0.8;
+        // Base config: Tournament (1), PMX (0), Invert (0) -> 0b001 = 1
+        uint8_t base_config = 1; 
+
+        Route* res = NULL;
+        double rel_error = 0.0;
+        double avg_rel_error = 0.0;
+        double avg_last_gen = 0.0;
+
+        // Base run against Instance Size ---
+        res = genetic(distances, num_points, max_time, base_pop, base_config, m_rate, c_rate, 0, &avg_last_gen);
+        if(res){
+            rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
+            avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
+            fprintf(csv_file, "%s,%zu,%u,3.0_Zaleznosc_Czasu_Bledu,Base,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                TSP_file, num_points, best_solution, (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+            free(res->city_order); free(res);
+        }
+
+        // Population Size Sweep ---
+        double pop_sizes[] = {0.25, 0.5, 1.0, 2.0};
+        for(int i=0; i<4; i++){
+            res = genetic(distances, num_points, max_time, (size_t)(pop_sizes[i] * (double)num_points), base_config, m_rate, c_rate, 0, &avg_last_gen);
+            if(res){
+                rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
+                avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
+                fprintf(csv_file, "%s,%zu,%u,3.5_Rozmiar_Populacji,%zu,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, (size_t)(pop_sizes[i] * (double)num_points), (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                free(res->city_order); free(res);
+            }
+        }
+
+        // Mutation Method Sweep (Swap vs Invert) ---
+        uint8_t mut_configs[] = {base_config & ~4, base_config | 4}; // 0=Invert, 4=Swap (bit 2)
+        const char* mut_names[] = {"Invert", "Swap"};
+        for(int i=0; i<2; i++){
+            res = genetic(distances, num_points, max_time, base_pop, mut_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            if(res){
+                rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
+                avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
+                fprintf(csv_file, "%s,%zu,%u,4.0_Metoda_Mutacji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, mut_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                free(res->city_order); free(res);
+            }
+        }
+
+        // Crossover Method Sweep (PMX vs OX) ---
+        uint8_t cross_configs[] = {base_config & ~2, base_config | 2}; // 0=PMX, 2=OX (bit 1)
+        const char* cross_names[] = {"PMX", "OX"};
+        for(int i=0; i<2; i++){
+            res = genetic(distances, num_points, max_time, base_pop, cross_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            if(res){
+                rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
+                avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
+                fprintf(csv_file, "%s,%zu,%u,4.5_Metoda_Krzyzowania,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, cross_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                free(res->city_order); free(res);
+            }
+        }
+
+        // Selection Method Sweep (Roulette vs Tournament) ---
+        uint8_t sel_configs[] = {base_config & ~1, base_config | 1}; // 0=Roulette, 1=Tournament (bit 0)
+        const char* sel_names[] = {"Roulette", "Tournament"};
+        for(int i=0; i<2; i++){
+            res = genetic(distances, num_points, max_time, base_pop, sel_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            if(res){
+                rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
+                avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
+                fprintf(csv_file, "%s,%zu,%u,5.0_Metoda_Selekcji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, sel_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                free(res->city_order); free(res);
+            }
+        }
+
+        fflush(csv_file);
+        free(distances);
+    }
+
+    fclose(csv_file);
+    fclose(f);
+    fprintf(stdout, "\nGA experiments completed. Results saved to " ANSI_STYLE_BOLD "ga_results.csv" ANSI_RESET_ALL "\n");
 
 }

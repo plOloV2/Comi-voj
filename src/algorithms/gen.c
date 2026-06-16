@@ -2,9 +2,9 @@
 #include "UI/TUI_func.h"
 
 typedef enum config{
-    SELECTION,
-    CROSSOVER,
-    MUTATION
+    SELECTION = 1 << 0,
+    CROSSOVER = 1 << 1,
+    MUTATION  = 1 << 2
 }config;
 
 typedef union type_conv{
@@ -12,18 +12,28 @@ typedef union type_conv{
     uint16_t b16[4];
 } type_conv;
 
+typedef struct {
+    double total_fit;
+    double* cum_fitness;
+} RouletteContext;
+
 
 static void free_route(Route* route);
 static void free_gen(Route** gen, size_t gen_size);
 static Route** alloc_gen(size_t gen_size, size_t num_points);
+static void mut_swap(uint16_t* child, size_t num_points, xoshiro256_state* xos);
+static void mut_inver(uint16_t* child, size_t num_points, xoshiro256_state* xos);
 static uint64_t calculate_road_dist(uint32_t* distances, size_t num_points, uint16_t* list);
+static Route* selec_roulette(Route** gen, size_t gen_size, xoshiro256_state* xos, void* ctx);
+static Route* selec_tournament(Route** gen, size_t gen_size, xoshiro256_state* xos, void* ctx);
 static void init_first_gen(size_t gen_size, uint32_t* distances, size_t num_points, xoshiro256_state* xos, Route** gen);
 static void crossover_OX(const uint16_t* p1, const uint16_t* p2, uint16_t* child, size_t num_points, xoshiro256_state* xos);
 static void crossover_PMX(const uint16_t* p1, const uint16_t* p2, uint16_t* child, size_t num_points, xoshiro256_state* xos);
 
 // Main genetic algorithm function
-Route* genetic(uint32_t* distances, const size_t num_points, const double max_sec, const size_t generation_size, const uint8_t config, const double mutat_rate, const double cross_rate, const uint64_t target){
+Route* genetic(uint32_t* distances, const size_t num_points, const double max_sec, const size_t generation_size, const uint8_t config, const double mutat_rate, const double cross_rate, const uint64_t target, double* avg_last_gen){
 
+    // startup checks and alloc
     if(num_points <= 3){
         print_error("Graph size is less or eqal to 3. You can find the best route by yourself.\n");
         return NULL;
@@ -60,13 +70,36 @@ Route* genetic(uint32_t* distances, const size_t num_points, const double max_se
     xoshiro256_state xos_state;
     xoshiro_init(&xos_state, xos_seed);
 
-    static Route*   (*selec_func)(Route**, size_t, xoshiro256_state*);
-    static void     (*cross_func)(const uint16_t*, const uint16_t*, uint16_t*, size_t, xoshiro256_state*);
-    static void     (*mutat_func)(const uint16_t*, size_t, xoshiro256_state*);
+    RouletteContext* sel_context = NULL;
+
+    // functions selection based on passed config
+    Route*   (*selec_func)(Route**, size_t, xoshiro256_state*, void*);
+    void     (*cross_func)(const uint16_t*, const uint16_t*, uint16_t*, size_t, xoshiro256_state*);
+    void     (*mutat_func)(uint16_t*, size_t, xoshiro256_state*);
 
     if(config & SELECTION){
-
+        selec_func = &selec_tournament;
     }else{
+        selec_func = selec_roulette;
+
+        sel_context = malloc(sizeof(RouletteContext));
+        if(!sel_context){
+            print_error("sel_context alloc failed.\n");
+            free_gen(curr_gen, generation_size);
+            free_gen(next_gen, generation_size);
+            free_route(best_route);
+            return NULL;
+        }
+
+        sel_context->cum_fitness = malloc(generation_size * sizeof(double));
+        if(!sel_context->cum_fitness){
+            print_error("sel_context->cum_fitness alloc failed.\n");
+            free_gen(curr_gen, generation_size);
+            free_gen(next_gen, generation_size);
+            free_route(best_route);
+            free(sel_context);
+            return NULL;
+        }
 
     }
 
@@ -77,33 +110,53 @@ Route* genetic(uint32_t* distances, const size_t num_points, const double max_se
     }
 
     if(config & MUTATION){
-
+        mutat_func = &mut_swap;
     }else{
-        
+        mutat_func = &mut_inver;
     }
 
+    // generates generation 0
     init_first_gen(generation_size, distances, num_points, &xos_state, curr_gen);
 
     best_route->distance_u = UINT64_MAX;
     best_route->time = omp_get_wtime();
 
-    while((omp_get_wtime() - best_route->time) < max_sec || best_route->distance_u <= target){
+    // algorithm runs until it finds better solution than passed target or till time runs out
+    while((omp_get_wtime() - best_route->time) < max_sec && best_route->distance_u > target){
 
         size_t best_id = 0;
         for(size_t i = 1; i < generation_size; i++)
             if(curr_gen[i]->distance_u < curr_gen[best_id]->distance_u)
                 best_id = i;
 
-        if(curr_gen[best_id]->distance_u < best_route->distance_u)
+        if(curr_gen[best_id]->distance_u < best_route->distance_u){
             memcpy(best_route->city_order, curr_gen[best_id]->city_order, num_points * sizeof(uint16_t));
+            best_route->distance_u = curr_gen[best_id]->distance_u;
+        }
 
+        // precalculation for roulett selection (drops from n^2 to nlogn)
+        if(sel_context != NULL){
+
+            sel_context->total_fit = 0.0;
+            for(size_t i = 0; i < generation_size; i++){
+
+                double dist = (double)curr_gen[i]->distance_u;
+                sel_context->total_fit += 1.0 / dist;
+                sel_context->cum_fitness[i] = sel_context->total_fit;
+
+            }
+
+        }
+
+        // best from previouse gen gets transfered to next
         next_gen[0]->distance_u = curr_gen[best_id]->distance_u;
         memcpy(next_gen[0]->city_order, curr_gen[best_id]->city_order, num_points * sizeof(uint16_t));
 
+        // loop to fill next generation with childs from current generation
         for(size_t i = 1; i < generation_size; i++){
         
-            Route* parent1 = selec_func(curr_gen, generation_size, &xos_state);
-            Route* parent2 = selec_func(curr_gen, generation_size, &xos_state);
+            Route* parent1 = selec_func(curr_gen, generation_size, &xos_state, (void*)sel_context);
+            Route* parent2 = selec_func(curr_gen, generation_size, &xos_state, (void*)sel_context);
 
             double cross_chance = (double)xoshiro_next(&xos_state) / (double)UINT64_MAX;
             if(cross_chance < cross_rate){
@@ -123,6 +176,7 @@ Route* genetic(uint32_t* distances, const size_t num_points, const double max_se
 
         }
 
+        // next gen becomes current gen
         void* temp = next_gen;
         next_gen = curr_gen;
         curr_gen = temp;
@@ -131,11 +185,19 @@ Route* genetic(uint32_t* distances, const size_t num_points, const double max_se
 
     best_route->time = omp_get_wtime() - best_route->time;
 
+    *avg_last_gen = 0.0;
+
+    for(size_t i = 0; i < generation_size; i++)
+        *avg_last_gen += (double)curr_gen[i]->distance_u / (double)generation_size;
+
+    // memory cleanup
     free_gen(curr_gen, generation_size);
     free_gen(next_gen, generation_size);
 
-    if(best_route->distance_u == UINT64_MAX)
-        best_route->distance_u = 0;
+    if(sel_context != NULL){
+        free(sel_context->cum_fitness);
+        free(sel_context);
+    }
 
     return best_route;
 
@@ -204,6 +266,7 @@ static Route** alloc_gen(size_t gen_size, size_t num_points){
             for(size_t j = 0; j < i; j++)
                 free_route(generation[j]);
 
+            free(generation);
             return NULL;
         }
 
@@ -215,6 +278,7 @@ static Route** alloc_gen(size_t gen_size, size_t num_points){
             for(size_t j = 0; j < i; j++)
                 free_route(generation[j]);
 
+            free(generation);
             return NULL;
         }
 
@@ -245,7 +309,6 @@ static void free_route(Route* route){
 
     free(route->city_order);
     free(route);
-    route = NULL;
 
 }
 
@@ -256,12 +319,19 @@ static void free_gen(Route** gen, size_t gen_size){
         free_route(gen[i]);
 
     free(gen);
-    gen = NULL;
 
 }
 
-
+// Order Crossover 
 static void crossover_OX(const uint16_t* p1, const uint16_t* p2, uint16_t* child, size_t num_points, xoshiro256_state* xos){
+
+    // buffer for cities copied from first parent
+    uint8_t* visited = calloc(num_points, sizeof(uint8_t));
+    if(!visited){
+        print_error("visited alloc failed in crossover_OX. Copying parent 1...\n");
+        memcpy(child, p1, num_points * sizeof(uint16_t));
+        return;
+    }
 
     // random start and end index
     type_conv rand_val;
@@ -272,13 +342,6 @@ static void crossover_OX(const uint16_t* p1, const uint16_t* p2, uint16_t* child
     
     size_t start = (pt1 < pt2) ? pt1 : pt2;
     size_t end = (pt1 > pt2) ? pt1 : pt2;
-
-    // buffer for cities copied from first parent
-    uint8_t* visited = calloc(num_points, sizeof(uint8_t));
-    if(!visited){
-        print_error("visited alloc failed in crossover_OX.\n");
-        return;
-    }
 
     // coping cities from firs parent and marking them
     memcpy(&child[start], &p1[start], (end - start + 1) * sizeof(uint16_t));
@@ -305,8 +368,16 @@ static void crossover_OX(const uint16_t* p1, const uint16_t* p2, uint16_t* child
 
 }
 
-
+// Partially Mapped Crossover
 static void crossover_PMX(const uint16_t* p1, const uint16_t* p2, uint16_t* child, size_t num_points, xoshiro256_state* xos){
+
+    // buffer for cities positions in parent 2  
+    uint16_t* pos_in_p2 = malloc(num_points * sizeof(uint16_t));
+    if(!pos_in_p2){
+        print_error("pos_in_p2 alloc failed in crossover_PMX. Copying parent 1...\n");
+        memcpy(child, p1, num_points * sizeof(uint16_t));
+        return;
+    }
 
     // random start and end index
     type_conv rand_val;
@@ -318,51 +389,131 @@ static void crossover_PMX(const uint16_t* p1, const uint16_t* p2, uint16_t* chil
     size_t start = (pt1 < pt2) ? pt1 : pt2;
     size_t end = (pt1 > pt2) ? pt1 : pt2;
 
-    // buffer from 
-    uint16_t* pos_in_p2 = malloc(num_points * sizeof(uint16_t));
-    if(!pos_in_p2) {
-        print_error("pos_in_p2 alloc failed in crossover_PMX.\n");
-        return;
-    }
+    // setting child to uninitialized state
+    memset(child, 0xff, num_points * sizeof(uint16_t));
 
-    for(size_t i = 0; i < num_points; i++) {
-        child[i] = UINT16_MAX;
-        pos_in_p2[p2[i]] = i; // Zapisujemy, na jakim indeksie w p2 leży dane miasto
-    }
+    // lookup table for city position in parent 2
+    for(size_t i = 0; i < num_points; i++)
+        pos_in_p2[p2[i]] = i;
 
+    // copy midle part from parent 1 to child
     memcpy(&child[start], &p1[start], (end - start + 1) * sizeof(uint16_t));
 
-    // 2. Szukanie miejsca dla miast z segmentu p2, których jeszcze nie ma w dziecku
-    for(size_t i = start; i <= end; i++) {
+    // placing cities from middle part of parent 2
+    for(size_t i = start; i <= end; i++){
         uint16_t city = p2[i];
         
-        // Sprawdzamy, czy miasto z p2 nie zostało już skopiowane z p1
+        // is this city already included?
         int is_in_segment = 0;
-        for(size_t j = start; j <= end; j++) {
-            if(p1[j] == city) {
+        for(size_t j = start; j <= end; j++){
+            if(p1[j] == city){
                 is_in_segment = 1;
                 break;
             }
         }
 
-        if(!is_in_segment) {
+        // looking for place to put this city
+        if(!is_in_segment){
             size_t curr_idx = i;
-            // Mapowanie: szukamy wolnego miejsca poza segmentem
-            while(curr_idx >= start && curr_idx <= end) {
+            while(curr_idx >= start && curr_idx <= end){
                 uint16_t city_in_p1 = p1[curr_idx];
                 curr_idx = pos_in_p2[city_in_p1];
             }
+
             child[curr_idx] = city;
+
         }
+
     }
 
-    // 3. Wypełnianie pozostałych pustych miejsc bezpośrednio z p2
-    for(size_t i = 0; i < num_points; i++) {
-        if(child[i] == UINT16_MAX) {
+    // filling remaining empty places with towns from parent 2
+    for(size_t i = 0; i < num_points; i++){
+
+        if(child[i] == UINT16_MAX)
             child[i] = p2[i];
-        }
+        
     }
 
     free(pos_in_p2);
+
+}
+
+// Mutation by swaping two random cities
+static void mut_swap(uint16_t* child, size_t num_points, xoshiro256_state* xos){
+    type_conv rand_val;
+    rand_val.b64 = xoshiro_next(xos);
+
+    size_t pt1 = rand_val.b16[0] % num_points;
+    size_t pt2 = rand_val.b16[1] % num_points;
+    
+    // ensure we are swapping two distinct indices to actually cause a mutation
+    if(pt1 == pt2)
+        pt2 = (pt2 + 1) % num_points;
+
+    swap_numbers(&child[pt1], &child[pt2]);
+
+}
+
+// Mutation by inverting city order inside random 
+static void mut_inver(uint16_t* child, size_t num_points, xoshiro256_state* xos){
+    type_conv rand_val;
+    rand_val.b64 = xoshiro_next(xos);
+
+    size_t pt1 = rand_val.b16[0] % num_points;
+    size_t pt2 = rand_val.b16[1] % num_points;
+
+    size_t start = (pt1 < pt2) ? pt1 : pt2;
+    size_t end = (pt1 > pt2) ? pt1 : pt2;
+
+    // Reverse the sequence between start and end indices
+    while(start < end){
+        swap_numbers(&child[start], &child[end]);
+        start++;
+        end--;
+    }
+
+}
+
+// Tournament selection (bo4)
+static Route* selec_tournament(Route** gen, size_t gen_size, xoshiro256_state* xos,  [[maybe_unused]] void* ctx){
+    const size_t k = 4;
+    type_conv rand_val;
+    rand_val.b64 = xoshiro_next(xos);
+
+    size_t best_idx = rand_val.b16[0] % gen_size;
+
+    // Compare with (k-1) other random competitors
+    for(size_t i = 1; i < k; i++){
+        size_t rand_idx = rand_val.b16[i] % gen_size;
+        
+        if(gen[rand_idx]->distance_u < gen[best_idx]->distance_u)
+            best_idx = rand_idx;
+        
+    }
+
+    return gen[best_idx];
+
+}
+
+// Roulette selection
+static Route* selec_roulette(Route** gen, size_t gen_size, xoshiro256_state* xos, void* context){
+
+    const RouletteContext* ctx = (const RouletteContext*)context;
+
+    double r = ((double)xoshiro_next(xos) / (double)UINT64_MAX) * ctx->total_fit;
+
+    // Binary search for the first cumulative element >= r
+    size_t low = 0, high = gen_size - 1;
+    while(low < high){
+
+        size_t mid = low + (high - low) / 2;
+        if(ctx->cum_fitness[mid] < r)
+            low = mid + 1;
+        else
+            high = mid;
+
+    }
+
+    return gen[low];
 
 }
