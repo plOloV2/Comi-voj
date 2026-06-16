@@ -627,7 +627,7 @@ void run_GA_experiment(){
         double avg_last_gen = 0.0;
 
         // Base run against Instance Size ---
-        res = genetic(distances, num_points, max_time, base_pop, base_config, m_rate, c_rate, 0, &avg_last_gen);
+        res = genetic(distances, num_points, max_time, base_pop, base_config, m_rate, c_rate, best_solution, &avg_last_gen);
         if(res){
             rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
             avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
@@ -639,7 +639,7 @@ void run_GA_experiment(){
         // Population Size Sweep ---
         double pop_sizes[] = {0.25, 0.5, 1.0, 2.0};
         for(int i=0; i<4; i++){
-            res = genetic(distances, num_points, max_time, (size_t)(pop_sizes[i] * (double)num_points), base_config, m_rate, c_rate, 0, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, (size_t)(pop_sizes[i] * (double)num_points), base_config, m_rate, c_rate, best_solution * 2, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
@@ -653,7 +653,7 @@ void run_GA_experiment(){
         uint8_t mut_configs[] = {base_config & ~4, base_config | 4}; // 0=Invert, 4=Swap (bit 2)
         const char* mut_names[] = {"Invert", "Swap"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, mut_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, mut_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
@@ -667,7 +667,7 @@ void run_GA_experiment(){
         uint8_t cross_configs[] = {base_config & ~2, base_config | 2}; // 0=PMX, 2=OX (bit 1)
         const char* cross_names[] = {"PMX", "OX"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, cross_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, cross_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
@@ -681,7 +681,7 @@ void run_GA_experiment(){
         uint8_t sel_configs[] = {base_config & ~1, base_config | 1}; // 0=Roulette, 1=Tournament (bit 0)
         const char* sel_names[] = {"Roulette", "Tournament"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, sel_configs[i], m_rate, c_rate, 0, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, sel_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
