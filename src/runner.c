@@ -42,6 +42,7 @@ Route* run_choosen_algorithm(int32_t algorithm, alg_in_data* data, uint32_t* dis
 
         case 9:
             result = genetic(distances, num_points, data->max_time, (size_t)(((double)data->generation_size / 100.0) * (double)num_points), data->config, data->mutat_rate, data->cross_rate, data->target, &data->avg_last_gen);
+            printf("Average last gen:%f\n", data->avg_last_gen);
             break;
         
     }
@@ -615,11 +616,11 @@ void run_GA_experiment(){
 
         // Base GA Parameters
         double max_time = 900.0; // 15 mins max per 3.0 requirement
-        size_t base_pop = num_points * 2; 
-        double m_rate = 0.05;
+        size_t base_pop = num_points / 2; 
+        double m_rate = 0.2;
         double c_rate = 0.8;
-        // Base config: Tournament (1), PMX (0), Invert (0) -> 0b001 = 1
-        uint8_t base_config = 1; 
+        // Base config: Tournament (1), PMX (0), Swap (1) -> 0b101 = 5
+        uint8_t base_config = 0b101;
 
         Route* res = NULL;
         double rel_error = 0.0;
