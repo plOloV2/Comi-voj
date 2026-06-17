@@ -575,7 +575,7 @@ void run_GA_experiment(){
         return;
     }
     
-    fprintf(csv_file, "Instance,N,Optimum,Test_Type,Param_Value,Found_Distance,Rel_Error_%%,Time_s,Avg_Last_Gen,Avg_Rel_Error_%%\n");
+    fprintf(csv_file, "Instance,N,Optimum,Target,Test_Type,Param_Value,Found_Distance,Rel_Error_%%,Time_s,Avg_Last_Gen,Avg_Rel_Error_%%\n");
 
     char line[64], TSP_file[32], value[32];
     fgets(line, sizeof(line), f); // Skip header
@@ -626,25 +626,34 @@ void run_GA_experiment(){
         double avg_rel_error = 0.0;
         double avg_last_gen = 0.0;
 
+        uint64_t targeted_dist;
+        if(num_points <= 25){
+            targeted_dist = best_solution;
+        }else if(num_points < 75){
+            targeted_dist = (uint64_t)((double)best_solution * 1.5);
+        }else{
+            targeted_dist = (uint64_t)((double)best_solution * 2.0);
+        }
+
         // Base run against Instance Size ---
-        res = genetic(distances, num_points, max_time, base_pop, base_config, m_rate, c_rate, best_solution, &avg_last_gen);
+        res = genetic(distances, num_points, max_time, base_pop, base_config, m_rate, c_rate, targeted_dist, &avg_last_gen);
         if(res){
             rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
             avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
-            fprintf(csv_file, "%s,%zu,%u,3.0_Zaleznosc_Czasu_Bledu,Base,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
-                TSP_file, num_points, best_solution, (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+            fprintf(csv_file, "%s,%zu,%u,%lu,3.0_Zaleznosc_Czasu_Bledu,Base,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                TSP_file, num_points, best_solution, targeted_dist, (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
             free(res->city_order); free(res);
         }
 
         // Population Size Sweep ---
         double pop_sizes[] = {0.25, 0.5, 1.0, 2.0};
         for(int i=0; i<4; i++){
-            res = genetic(distances, num_points, max_time, (size_t)(pop_sizes[i] * (double)num_points), base_config, m_rate, c_rate, best_solution * 2, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, (size_t)(pop_sizes[i] * (double)num_points), base_config, m_rate, c_rate, targeted_dist, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
-                fprintf(csv_file, "%s,%zu,%u,3.5_Rozmiar_Populacji,%zu,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
-                        TSP_file, num_points, best_solution, (size_t)(pop_sizes[i] * (double)num_points), (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                fprintf(csv_file, "%s,%zu,%u,%lu,3.5_Rozmiar_Populacji,%zu,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, targeted_dist, (size_t)(pop_sizes[i] * (double)num_points), (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
                 free(res->city_order); free(res);
             }
         }
@@ -653,12 +662,12 @@ void run_GA_experiment(){
         uint8_t mut_configs[] = {base_config & ~4, base_config | 4}; // 0=Invert, 4=Swap (bit 2)
         const char* mut_names[] = {"Invert", "Swap"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, mut_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, mut_configs[i], m_rate, c_rate, targeted_dist, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
-                fprintf(csv_file, "%s,%zu,%u,4.0_Metoda_Mutacji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
-                        TSP_file, num_points, best_solution, mut_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                fprintf(csv_file, "%s,%zu,%u,%lu,4.0_Metoda_Mutacji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, targeted_dist, mut_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
                 free(res->city_order); free(res);
             }
         }
@@ -667,12 +676,12 @@ void run_GA_experiment(){
         uint8_t cross_configs[] = {base_config & ~2, base_config | 2}; // 0=PMX, 2=OX (bit 1)
         const char* cross_names[] = {"PMX", "OX"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, cross_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, cross_configs[i], m_rate, c_rate, targeted_dist, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
-                fprintf(csv_file, "%s,%zu,%u,4.5_Metoda_Krzyzowania,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
-                        TSP_file, num_points, best_solution, cross_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                fprintf(csv_file, "%s,%zu,%u,%lu,4.5_Metoda_Krzyzowania,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, targeted_dist, cross_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
                 free(res->city_order); free(res);
             }
         }
@@ -681,12 +690,12 @@ void run_GA_experiment(){
         uint8_t sel_configs[] = {base_config & ~1, base_config | 1}; // 0=Roulette, 1=Tournament (bit 0)
         const char* sel_names[] = {"Roulette", "Tournament"};
         for(int i=0; i<2; i++){
-            res = genetic(distances, num_points, max_time, base_pop, sel_configs[i], m_rate, c_rate, best_solution * 2, &avg_last_gen);
+            res = genetic(distances, num_points, max_time, base_pop, sel_configs[i], m_rate, c_rate, targeted_dist, &avg_last_gen);
             if(res){
                 rel_error = ((double)res->distance_u - best_solution) / best_solution * 100.0;
                 avg_rel_error = (avg_last_gen - best_solution) / best_solution * 100.0;
-                fprintf(csv_file, "%s,%zu,%u,5.0_Metoda_Selekcji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
-                        TSP_file, num_points, best_solution, sel_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
+                fprintf(csv_file, "%s,%zu,%u,%lu,5.0_Metoda_Selekcji,%s,%llu,%.4lf,%.4lf,%.4lf,%.4lf\n",
+                        TSP_file, num_points, best_solution, targeted_dist, sel_names[i], (unsigned long long)res->distance_u, rel_error, res->time, avg_last_gen, avg_rel_error);
                 free(res->city_order); free(res);
             }
         }
